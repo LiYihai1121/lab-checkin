@@ -1,0 +1,17 @@
+{
+  "name": "lab-checkin-server",
+  "version": "1.0.0",
+  "description": "实验室签到系统后端",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2"
+  }
+}

@@ -1,0 +1,78 @@
+import { Router } from 'express';
+import db, { nowStr } from '../db/database.js';
+import { authenticate } from '../middleware/auth.js';
+
+const router = Router();
+router.use(authenticate);
+
+/** 解析本地时间字符串为时间戳 */
+function ts(str) {
+  return new Date(String(str).replace(' ', 'T')).getTime();
+}
+
+/** 当前签到状态：进行中的记录 + 今日汇总 */
+router.get('/status', (req, res) => {
+  const active = db
+    .prepare(
+      `SELECT r.*, u.name, u.username FROM checkin_records r
+       JOIN users u ON u.id = r.user_id
+       WHERE r.user_id = ? AND r.status = 'checked_in'
+       ORDER BY r.id DESC LIMIT 1`
+    )
+    .get(req.user.id);
+  const todayStr = nowStr().slice(0, 10);
+  const stats = db
+    .prepare(
+      `SELECT COUNT(*) AS sessions, COALESCE(SUM(duration_minutes), 0) AS minutes
+       FROM checkin_records WHERE user_id = ? AND checkin_time >= ?`
+    )
+    .get(req.user.id, `${todayStr} 00:00:00`);
+  res.json({ active: active || null, todaySessions: stats.sessions, todayMinutes: stats.minutes });
+});
+
+/** 签到（需有效动态码） */
+router.post('/in', (req, res) => {
+  const code = String(req.body?.code || '').trim().toUpperCase();
+  if (!code) return res.status(400).json({ message: '请输入签到码' });
+
+  const codeRow = db
+    .prepare('SELECT * FROM checkin_codes WHERE code = ? AND expires_at > ?')
+    .get(code, nowStr());
+  if (!codeRow) {
+    return res.status(400).json({ message: '签到码无效或已过期，请联系管理员' });
+  }
+
+  const active = db
+    .prepare("SELECT id FROM checkin_records WHERE user_id = ? AND status = 'checked_in'")
+    .get(req.user.id);
+  if (active) {
+    return res.status(400).json({ message: '您已处于签到状态，请先签退' });
+  }
+
+  const result = db
+    .prepare(
+      "INSERT INTO checkin_records (user_id, checkin_time, status, code_id) VALUES (?, ?, 'checked_in', ?)"
+    )
+    .run(req.user.id, nowStr(), codeRow.id);
+  const record = db.prepare('SELECT * FROM checkin_records WHERE id = ?').get(Number(result.lastInsertRowid));
+  res.json({ message: '签到成功', record });
+});
+
+/** 签退 */
+router.post('/out', (req, res) => {
+  const active = db
+    .prepare("SELECT * FROM checkin_records WHERE user_id = ? AND status = 'checked_in' ORDER BY id DESC LIMIT 1")
+    .get(req.user.id);
+  if (!active) {
+    return res.status(400).json({ message: '当前没有进行中的签到' });
+  }
+  const checkoutTime = nowStr();
+  const durationMinutes = Math.max(0, Math.round((ts(checkoutTime) - ts(active.checkin_time)) / 60000));
+  db.prepare(
+    "UPDATE checkin_records SET checkout_time = ?, duration_minutes = ?, status = 'completed' WHERE id = ?"
+  ).run(checkoutTime, durationMinutes, active.id);
+  const record = db.prepare('SELECT * FROM checkin_records WHERE id = ?').get(active.id);
+  res.json({ message: `签退成功，本次共 ${durationMinutes} 分钟`, record });
+});
+
+export default router;

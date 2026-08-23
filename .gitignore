@@ -1,0 +1,14 @@
+# dependencies
+node_modules/
+
+# build output
+web/dist/
+
+# database
+server/data/*.db
+server/data/*.db-shm
+server/data/*.db-wal
+
+# logs & misc
+*.log
+.DS_Store

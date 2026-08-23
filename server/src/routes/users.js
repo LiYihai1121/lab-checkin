@@ -1,0 +1,98 @@
+import { Router } from 'express';
+import bcrypt from 'bcryptjs';
+import db, { nowStr } from '../db/database.js';
+import { authenticate, requireAdmin } from '../middleware/auth.js';
+
+const router = Router();
+router.use(authenticate, requireAdmin);
+
+/** 用户列表（分页 + 关键字搜索用户名/姓名） */
+router.get('/', (req, res) => {
+  const page = Math.max(parseInt(req.query.page) || 1, 1);
+  const pageSize = Math.min(Math.max(parseInt(req.query.pageSize) || 10, 1), 100);
+  const kw = `%${String(req.query.keyword || '').trim()}%`;
+
+  const total = db
+    .prepare('SELECT COUNT(*) AS c FROM users WHERE username LIKE ? OR name LIKE ?')
+    .get(kw, kw).c;
+  const list = db
+    .prepare(
+      `SELECT id, username, name, role, created_at FROM users
+       WHERE username LIKE ? OR name LIKE ?
+       ORDER BY id DESC LIMIT ? OFFSET ?`
+    )
+    .all(kw, kw, pageSize, (page - 1) * pageSize);
+
+  res.json({ list, total, page, pageSize });
+});
+
+/** 新增用户 */
+router.post('/', (req, res) => {
+  const { username, password, name, role } = req.body || {};
+  if (!username || !/^[A-Za-z0-9_]{2,20}$/.test(String(username))) {
+    return res.status(400).json({ message: '用户名需为 2-20 位字母、数字或下划线' });
+  }
+  if (!password || String(password).length < 6) {
+    return res.status(400).json({ message: '密码至少 6 位' });
+  }
+  if (!name || !String(name).trim()) {
+    return res.status(400).json({ message: '请填写姓名' });
+  }
+  if (!['student', 'admin'].includes(role)) {
+    return res.status(400).json({ message: '角色无效' });
+  }
+  const exists = db.prepare('SELECT id FROM users WHERE username = ?').get(String(username));
+  if (exists) return res.status(400).json({ message: '用户名已存在' });
+
+  const result = db
+    .prepare('INSERT INTO users (username, password_hash, name, role, created_at) VALUES (?, ?, ?, ?, ?)')
+    .run(String(username), bcrypt.hashSync(String(password), 10), String(name).trim(), role, nowStr());
+  res.json({ id: Number(result.lastInsertRowid) });
+});
+
+/** 编辑用户（姓名/角色，可顺带重置密码） */
+router.put('/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+  if (!user) return res.status(404).json({ message: '用户不存在' });
+
+  const name = String(req.body?.name ?? user.name).trim() || user.name;
+  const role = req.body?.role ?? user.role;
+  if (!['student', 'admin'].includes(role)) {
+    return res.status(400).json({ message: '角色无效' });
+  }
+  // 防止把最后一个管理员降级
+  if (user.role === 'admin' && role !== 'admin') {
+    const admins = db.prepare("SELECT COUNT(*) AS c FROM users WHERE role = 'admin'").get().c;
+    if (admins <= 1) return res.status(400).json({ message: '系统至少需要保留一名管理员' });
+  }
+
+  let sql = 'UPDATE users SET name = ?, role = ?';
+  const params = [name, role];
+  if (req.body?.password) {
+    if (String(req.body.password).length < 6) {
+      return res.status(400).json({ message: '密码至少 6 位' });
+    }
+    sql += ', password_hash = ?';
+    params.push(bcrypt.hashSync(String(req.body.password), 10));
+  }
+  sql += ' WHERE id = ?';
+  params.push(id);
+  db.prepare(sql).run(...params);
+  res.json({ message: '保存成功' });
+});
+
+/** 删除用户（不允许删除自己） */
+router.delete('/:id', (req, res) => {
+  const id = Number(req.params.id);
+  if (id === req.user.id) {
+    return res.status(400).json({ message: '不能删除当前登录账号' });
+  }
+  const user = db.prepare('SELECT id FROM users WHERE id = ?').get(id);
+  if (!user) return res.status(404).json({ message: '用户不存在' });
+  db.prepare('DELETE FROM checkin_records WHERE user_id = ?').run(id);
+  db.prepare('DELETE FROM users WHERE id = ?').run(id);
+  res.json({ message: '删除成功' });
+});
+
+export default router;
