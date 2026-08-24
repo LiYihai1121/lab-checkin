@@ -85,11 +85,22 @@ async function load() {
 }
 
 onMounted(async () => {
-  // 按需动态加载 echarts，减少首屏体积
+  // 按需动态加载 echarts core 和只需的图表/组件，进一步减小包体积
   if (!echarts) {
-    const mod = await import('echarts');
-    echarts = mod.default || mod;
+    const core = await import('echarts/core');
+    const charts = await import('echarts/charts');
+    const components = await import('echarts/components');
+    const renderers = await import('echarts/renderers');
+
+    const { LineChart, BarChart } = charts;
+    const { TooltipComponent, GridComponent } = components;
+    const { CanvasRenderer } = renderers;
+
+    // 注册需要的图表与组件到核心
+    core.use([LineChart, BarChart, TooltipComponent, GridComponent, CanvasRenderer]);
+    echarts = core;
   }
+
   trendChart = echarts.init(trendRef.value);
   rankChart = echarts.init(rankRef.value);
   window.addEventListener('resize', onResize);
