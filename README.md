@@ -91,6 +91,7 @@ lab-checkin/
 
 | 方法 | 路径 | 权限 | 说明 |
 |------|------|------|------|
+| GET | `/api/health` | 公开 | 服务健康检查 |
 | POST | `/api/auth/login` | 公开 | 登录，返回 JWT |
 | GET | `/api/auth/me` | 登录 | 当前用户信息 |
 | PUT | `/api/auth/password` | 登录 | 修改自己的密码 |
@@ -123,4 +124,10 @@ cd ../server && npm start   # 后端默认 3000 端口
 
 ```bash
 JWT_SECRET=你的随机密钥 PORT=3000 npm start
+```
+
+跨域部署时可通过 `CORS_ORIGIN` 指定允许的前端地址，多个地址用英文逗号分隔：
+
+```bash
+JWT_SECRET=你的随机密钥 CORS_ORIGIN=https://lab.example.com npm start
 ```

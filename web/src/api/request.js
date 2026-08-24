@@ -14,7 +14,10 @@ request.interceptors.request.use((config) => {
 request.interceptors.response.use(
   (res) => res.data,
   (err) => {
-    const msg = err.response?.data?.message || err.message || '请求失败';
+    const isNetworkError = !err.response;
+    const msg = isNetworkError
+      ? '无法连接服务器，请检查后端服务或网络连接'
+      : err.response.data?.message || err.message || '请求失败';
     if (err.response?.status === 401 && router.currentRoute.value.path !== '/login') {
       useUserStore().logout();
       ElMessage.error('登录已过期，请重新登录');

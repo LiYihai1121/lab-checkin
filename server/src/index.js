@@ -9,8 +9,17 @@ import recordRoutes from './routes/records.js';
 import statsRoutes from './routes/stats.js';
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+const PORT = Number(process.env.PORT) || 3000;
+
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim()).filter(Boolean)
+  : true;
+app.use(cors({ origin: allowedOrigins }));
+app.use(express.json({ limit: '32kb' }));
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', service: 'lab-checkin', timestamp: new Date().toISOString() });
+});
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -30,7 +39,14 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: '服务器内部错误' });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`实验室签到系统后端已启动: http://localhost:${PORT}`);
 });
+
+function shutdown(signal) {
+  console.log(`[shutdown] 收到 ${signal}，正在停止服务...`);
+  server.close(() => process.exit(0));
+}
+
+process.once('SIGINT', () => shutdown('SIGINT'));
+process.once('SIGTERM', () => shutdown('SIGTERM'));

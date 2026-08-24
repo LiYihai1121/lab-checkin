@@ -3,6 +3,12 @@
 </template>
 
 <style>
+:root {
+  color-scheme: light;
+  font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: #f4f7fb;
+}
+
 html,
 body,
 #app {
@@ -10,6 +16,9 @@ body,
   margin: 0;
 }
 body {
-  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif;
+  min-width: 320px;
+  color: #1f2937;
+  background: #f4f7fb;
+  -webkit-font-smoothing: antialiased;
 }
 </style>
