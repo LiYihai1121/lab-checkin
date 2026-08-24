@@ -13,12 +13,14 @@
         </el-progress>
         <div class="actions">
           <el-switch v-model="autoRefresh" active-text="到期自动刷新" />
-          <el-button type="primary" :icon="Refresh" @click="generate">手动刷新</el-button>
+          <el-button type="primary" :icon="Refresh" :loading="loading" @click="generate">手动刷新</el-button>
         </div>
       </div>
 
-      <el-empty v-else description="尚未生成签到码">
-        <el-button type="primary" size="large" @click="generate">生成签到码</el-button>
+      <el-empty v-else :description="errorMessage || '尚未生成签到码'">
+        <el-button type="primary" size="large" :loading="loading" @click="generate">
+          {{ errorMessage ? '重试生成' : '生成签到码' }}
+        </el-button>
       </el-empty>
 
       <el-alert class="tip" type="warning" :closable="false"
@@ -36,16 +38,27 @@ import request from '../../api/request';
 const qr = reactive({ url: '', code: '', dataUrl: '', expiresAt: 0 });
 const remain = ref(0);
 const autoRefresh = ref(true);
+const loading = ref(false);
+const errorMessage = ref('');
 let timer;
 
 const remainPercent = ref(100);
 const remainColor = ref('#67c23a');
 
 async function generate() {
-  const data = await request.post('/qrcode/generate');
-  const url = `${window.location.origin}/checkin?code=${data.code}`;
-  const dataUrl = await QRCode.toDataURL(url, { width: 320, margin: 2 });
-  Object.assign(qr, { ...data, url, dataUrl });
+  if (loading.value) return;
+  loading.value = true;
+  errorMessage.value = '';
+  try {
+    const data = await request.post('/qrcode/generate');
+    const url = `${window.location.origin}/checkin?code=${data.code}`;
+    const dataUrl = await QRCode.toDataURL(url, { width: 320, margin: 2 });
+    Object.assign(qr, { ...data, url, dataUrl });
+  } catch {
+    errorMessage.value = '签到码生成失败，请检查网络后重试';
+  } finally {
+    loading.value = false;
+  }
 }
 
 function tick() {
