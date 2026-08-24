@@ -14,20 +14,58 @@
       </div>
 
       <el-alert
-        title="当前系统未绑定邮箱或手机号，无法安全地自动发送找回链接。请联系管理员为你重置密码。"
-        type="warning"
+        title="请先联系管理员获取一次性找回码，找回码 15 分钟内有效。"
+        type="info"
         :closable="false"
         show-icon
       />
-      <el-button class="login-btn" type="primary" @click="router.push('/login')">返回登录</el-button>
+      <el-form ref="formRef" class="recovery-form" :model="form" :rules="rules" @keyup.enter="onSubmit">
+        <el-form-item prop="username">
+          <el-input v-model="form.username" placeholder="用户名" />
+        </el-form-item>
+        <el-form-item prop="resetCode">
+          <el-input v-model="form.resetCode" placeholder="管理员提供的找回码" />
+        </el-form-item>
+        <el-form-item prop="newPassword">
+          <el-input v-model="form.newPassword" type="password" show-password placeholder="新密码（至少 6 位）" />
+        </el-form-item>
+        <el-button class="login-btn" type="primary" :loading="loading" @click="onSubmit">重置密码</el-button>
+      </el-form>
+      <el-button class="back-button" link @click="router.push('/login')">返回登录</el-button>
     </el-card>
   </div>
 </template>
 
 <script setup>
+import { reactive, ref } from 'vue';
+import { ElMessage } from 'element-plus';
 import { useRouter } from 'vue-router';
+import request from '../api/request';
 
 const router = useRouter();
+const formRef = ref();
+const loading = ref(false);
+const form = reactive({ username: '', resetCode: '', newPassword: '' });
+const rules = {
+  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+  resetCode: [{ required: true, message: '请输入找回码', trigger: 'blur' }],
+  newPassword: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, message: '新密码至少 6 位', trigger: 'blur' }
+  ]
+};
+
+async function onSubmit() {
+  await formRef.value.validate().catch(() => Promise.reject());
+  loading.value = true;
+  try {
+    await request.post('/auth/password/reset', form);
+    ElMessage.success('密码重置成功，请使用新密码登录');
+    router.push('/login');
+  } finally {
+    loading.value = false;
+  }
+}
 </script>
 
 <style scoped>
@@ -126,6 +164,13 @@ h1 {
   margin-top: 22px;
   border: 0;
   background: #e7795b;
+}
+.recovery-form {
+  margin-top: 20px;
+}
+.back-button {
+  display: block;
+  margin: 12px auto 0;
 }
 @media (max-width: 480px) {
   .recovery-card {

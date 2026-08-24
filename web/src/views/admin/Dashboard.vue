@@ -1,7 +1,7 @@
 <template>
   <div>
     <el-row :gutter="16">
-      <el-col :span="6" v-for="card in cards" :key="card.label">
+      <el-col :xs="24" :sm="12" :lg="6" v-for="card in cards" :key="card.label">
         <el-card class="stat-card">
           <div class="stat-value" :style="{ color: card.color }">{{ card.value }}</div>
           <div class="stat-label">{{ card.label }}</div>
@@ -10,13 +10,13 @@
     </el-row>
 
     <el-row :gutter="16" style="margin-top: 16px">
-      <el-col :span="14">
+      <el-col :xs="24" :lg="14">
         <el-card>
           <template #header><b>近 30 天签到人次</b></template>
           <div ref="trendRef" class="chart"></div>
         </el-card>
       </el-col>
-      <el-col :span="10">
+      <el-col :xs="24" :lg="10">
         <el-card>
           <template #header><b>累计时长排行 Top 10</b></template>
           <div ref="rankRef" class="chart"></div>

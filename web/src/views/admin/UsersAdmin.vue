@@ -22,6 +22,7 @@
         <template #default="{ row }">
           <el-button size="small" @click="openEdit(row)">编辑</el-button>
           <el-button size="small" type="warning" @click="resetPwd(row)">重置密码</el-button>
+          <el-button size="small" type="info" @click="issueResetCode(row)">生成找回码</el-button>
           <el-button size="small" type="danger" :disabled="row.id === store.user?.id"
             @click="onDelete(row)">删除</el-button>
         </template>
@@ -133,6 +134,15 @@ async function onResetPwd() {
   await request.put(`/users/${pwdDialog.id}`, { password: pwdDialog.password });
   ElMessage.success('密码已重置');
   pwdDialog.visible = false;
+}
+
+async function issueResetCode(row) {
+  const data = await request.post(`/users/${row.id}/password-reset-token`);
+  await ElMessageBox.alert(
+    `找回码：${data.code}\n有效期至：${data.expiresAt}\n请将找回码安全地交给 ${row.name}。`,
+    '找回码已生成',
+    { confirmButtonText: '知道了' }
+  );
 }
 
 async function onDelete(row) {

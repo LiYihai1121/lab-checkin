@@ -1,5 +1,7 @@
 # 实验室签到系统
 
+项目架构说明见 [ARCHITECTURE.md](ARCHITECTURE.md)。
+
 基于 **Vue 3 + Element Plus + Express + SQLite** 的实验室签到签退管理系统，采用动态时效二维码防止代签。
 
 ## 功能
@@ -51,6 +53,8 @@ npm run dev
 3. 离开实验室时点击「签退」，系统自动计算本次时长
 4. 管理员在「统计看板」查看出勤情况
 
+忘记密码时，联系管理员在「用户管理」中生成一次性找回码，再在「忘记密码」页面输入用户名、找回码和新密码完成重置。找回码 15 分钟内有效且只能使用一次。
+
 > 局域网使用提示：管理员页面若通过局域网 IP 访问（如 `http://192.168.x.x:5173`），生成的二维码链接同样指向该 IP，同一 WiFi 下的手机可直接扫码打开。
 
 ## 项目结构
@@ -93,6 +97,7 @@ lab-checkin/
 |------|------|------|------|
 | GET | `/api/health` | 公开 | 服务健康检查 |
 | POST | `/api/auth/login` | 公开 | 登录，返回 JWT |
+| POST | `/api/auth/password/reset` | 公开 | 使用管理员找回码重置密码 |
 | GET | `/api/auth/me` | 登录 | 当前用户信息 |
 | PUT | `/api/auth/password` | 登录 | 修改自己的密码 |
 | POST | `/api/qrcode/generate` | 管理员 | 生成 60s 有效签到码 |
@@ -102,6 +107,7 @@ lab-checkin/
 | GET | `/api/records/my` | 登录 | 我的记录（分页/日期筛选） |
 | GET | `/api/records/all` | 管理员 | 全部记录（分页/关键字/日期） |
 | GET/POST/PUT/DELETE | `/api/users` | 管理员 | 用户增删改查 |
+| POST | `/api/users/:id/password-reset-token` | 管理员 | 生成一次性密码找回码 |
 | PUT | `/api/users/:id/password` | 管理员 | 重置密码 |
 | GET | `/api/stats/overview` | 管理员 | 实时概览 + 在馆列表 |
 | GET | `/api/stats/daily?days=30` | 管理员 | 每日签到人次 |
@@ -111,6 +117,7 @@ lab-checkin/
 
 - 密码 bcrypt 哈希存储；JWT 有效期 24 小时
 - 动态签到码 60 秒过期并轮换，防止截图外传代签
+- 密码找回码由管理员生成，15 分钟过期且使用后失效，不依赖邮箱或手机号
 - 角色权限中间件：学生无法访问管理接口；禁止删除自己、至少保留一名管理员
 
 ## 生产部署

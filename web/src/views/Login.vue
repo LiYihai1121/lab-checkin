@@ -2,7 +2,7 @@
   <div class="login-bg">
     <div class="login-shell">
       <section class="brand-panel">
-        <div class="brand-mark">LC</div>
+        <BrandLogo />
         <div class="eyebrow">LAB CHECK-IN SYSTEM</div>
         <h1>每一次进入，<br /><em>都有迹可循。</em></h1>
         <p>让实验室出入更清晰，让每一分钟投入都被准确记录。</p>
@@ -36,6 +36,7 @@ import { ElMessage } from 'element-plus';
 import { User, Lock } from '@element-plus/icons-vue';
 import request from '../api/request';
 import { useUserStore } from '../stores/user';
+import BrandLogo from '../components/BrandLogo.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -95,16 +96,8 @@ async function onSubmit() {
   color: #f7f2e9;
   background: #163d3d;
 }
-.brand-mark {
-  display: grid;
-  place-items: center;
-  width: 48px;
-  height: 48px;
+.brand-panel :deep(.brand-logo) {
   margin-bottom: 48px;
-  border-radius: 14px;
-  color: #163d3d;
-  background: #f4c95d;
-  font-weight: 800;
 }
 .eyebrow, .form-eyebrow {
   color: #f4c95d;
@@ -192,7 +185,7 @@ async function onSubmit() {
     min-height: 230px;
     padding: 30px;
   }
-  .brand-mark {
+  .brand-panel :deep(.brand-logo) {
     margin-bottom: 24px;
   }
   .brand-panel h1 {

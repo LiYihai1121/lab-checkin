@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import db, { nowStr } from '../db/database.js';
 import { authenticate, requireAdmin } from '../middleware/auth.js';
@@ -50,6 +51,26 @@ router.post('/', (req, res) => {
   res.json({ id: Number(result.lastInsertRowid) });
 });
 
+/** 生成一次性密码找回码（管理员交给用户使用） */
+router.post('/:id/password-reset-token', (req, res) => {
+  const id = Number(req.params.id);
+  const user = db.prepare('SELECT id FROM users WHERE id = ?').get(id);
+  if (!user) return res.status(404).json({ message: '用户不存在' });
+
+  const code = crypto.randomBytes(4).toString('hex').toUpperCase();
+  const tokenHash = crypto.createHash('sha256').update(code).digest('hex');
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+  const expiresAtStr = `${expiresAt.getFullYear()}-${String(expiresAt.getMonth() + 1).padStart(2, '0')}-${String(expiresAt.getDate()).padStart(2, '0')} ${String(expiresAt.getHours()).padStart(2, '0')}:${String(expiresAt.getMinutes()).padStart(2, '0')}:${String(expiresAt.getSeconds()).padStart(2, '0')}`;
+  db.prepare('UPDATE password_reset_tokens SET used_at = ? WHERE user_id = ? AND used_at IS NULL').run(nowStr(), id);
+  db.prepare('INSERT INTO password_reset_tokens (user_id, token_hash, expires_at, created_at) VALUES (?, ?, ?, ?)').run(
+    id,
+    tokenHash,
+    expiresAtStr,
+    nowStr()
+  );
+  res.json({ code, expiresAt: expiresAtStr });
+});
+
 /** 编辑用户（姓名/角色，可顺带重置密码） */
 router.put('/:id', (req, res) => {
   const id = Number(req.params.id);
@@ -90,6 +111,7 @@ router.delete('/:id', (req, res) => {
   }
   const user = db.prepare('SELECT id FROM users WHERE id = ?').get(id);
   if (!user) return res.status(404).json({ message: '用户不存在' });
+  db.prepare('DELETE FROM password_reset_tokens WHERE user_id = ?').run(id);
   db.prepare('DELETE FROM checkin_records WHERE user_id = ?').run(id);
   db.prepare('DELETE FROM users WHERE id = ?').run(id);
   res.json({ message: '删除成功' });

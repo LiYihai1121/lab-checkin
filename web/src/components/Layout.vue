@@ -1,7 +1,7 @@
 <template>
   <el-container class="layout">
     <el-aside width="220px" class="aside">
-      <div class="logo"><span class="logo-mark">LC</span><span>实验室签到</span></div>
+      <BrandLogo compact />
       <div class="nav-caption">{{ store.isAdmin ? '管理工作台' : '我的实验室' }}</div>
       <el-menu :default-active="$route.path" router background-color="#001529" text-color="#a6adb4"
         active-text-color="#ffffff">
@@ -14,11 +14,11 @@
 
     <el-container>
       <el-header class="header">
-        <div>
+        <div class="header-heading">
           <div class="kicker">LAB CHECK-IN / {{ store.isAdmin ? 'ADMIN' : 'STUDENT' }}</div>
           <span class="title">{{ $route.meta.title || '' }}</span>
         </div>
-        <el-dropdown @command="onCommand">
+        <el-dropdown class="account-menu" @command="onCommand">
           <span class="user-info">
             {{ store.user?.name }}（{{ store.isAdmin ? '管理员' : '学生' }}）
             <el-icon><ArrowDown /></el-icon>
@@ -41,6 +41,7 @@ import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { ArrowDown } from '@element-plus/icons-vue';
 import { useUserStore } from '../stores/user';
+import BrandLogo from './BrandLogo.vue';
 
 const store = useUserStore();
 const router = useRouter();
@@ -72,28 +73,11 @@ function onCommand(cmd) {
 }
 .aside {
   background: #102a2c;
-  padding: 0 12px;
+  padding: 0 16px;
+  box-shadow: 8px 0 24px rgba(16, 42, 44, 0.08);
 }
-.logo {
-  height: 60px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #fff;
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: 0;
-}
-.logo-mark {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  color: #102a2c;
-  background: #f4c95d;
-  font-size: 12px;
-  font-weight: 800;
+.aside :deep(.brand-logo) {
+  height: 68px;
 }
 .nav-caption {
   padding: 12px 12px 8px;
@@ -106,10 +90,15 @@ function onCommand(cmd) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #e8e8e8;
+  border-bottom: 1px solid #e5ded2;
   min-height: 76px;
   height: auto;
-  background: #fffdf8;
+  padding: 0 30px;
+  background: rgba(255, 253, 248, 0.9);
+  backdrop-filter: blur(12px);
+}
+.header-heading {
+  min-width: 0;
 }
 .kicker {
   margin-bottom: 4px;
@@ -128,10 +117,16 @@ function onCommand(cmd) {
   align-items: center;
   gap: 4px;
   outline: none;
+  padding: 8px 12px;
+  border: 1px solid #e5ded2;
+  border-radius: 20px;
+  color: #52615c;
+  background: #fffdf8;
+  font-size: 13px;
 }
 .main {
-  background: #f4f1ea;
-  padding: 28px 32px;
+  background: transparent;
+  padding: 30px 34px 42px;
 }
 .el-menu {
   border-right: none;
@@ -149,16 +144,19 @@ function onCommand(cmd) {
     width: 72px !important;
     padding: 0 8px;
   }
-  .logo {
+  .aside :deep(.brand-logo) {
     justify-content: center;
   }
-  .logo > span:last-child,
+  .aside :deep(.brand-logo .logo-copy),
   .nav-caption,
   .aside :deep(.el-menu-item span) {
     display: none;
   }
   .main {
     padding: 20px 14px;
+  }
+  .header {
+    padding: 0 16px;
   }
 }
 </style>

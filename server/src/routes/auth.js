@@ -1,7 +1,7 @@
 import { Router } from 'express';
+import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
-import db from '../db/database.js';
-import { nowStr } from '../db/database.js';
+import db, { nowStr } from '../db/database.js';
 import { authenticate, signToken } from '../middleware/auth.js';
 
 const router = Router();
@@ -47,6 +47,37 @@ router.put('/password', authenticate, (req, res) => {
     req.user.id
   );
   res.json({ message: '密码修改成功' });
+});
+
+/** 使用管理员发放的一次性找回码重置密码 */
+router.post('/password/reset', (req, res) => {
+  const { username, resetCode, newPassword } = req.body || {};
+  if (!username || !resetCode || !newPassword) {
+    return res.status(400).json({ message: '请填写用户名、找回码和新密码' });
+  }
+  if (String(newPassword).length < 6) {
+    return res.status(400).json({ message: '新密码至少 6 位' });
+  }
+
+  const user = db.prepare('SELECT id FROM users WHERE username = ?').get(String(username).trim());
+  const tokenHash = crypto.createHash('sha256').update(String(resetCode).trim().toUpperCase()).digest('hex');
+  const token = user
+    ? db.prepare(
+        `SELECT id FROM password_reset_tokens
+         WHERE user_id = ? AND token_hash = ? AND used_at IS NULL AND expires_at > ?
+         ORDER BY id DESC LIMIT 1`
+      ).get(user.id, tokenHash, nowStr())
+    : null;
+  if (!user || !token) {
+    return res.status(400).json({ message: '找回码无效或已过期' });
+  }
+
+  db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(
+    bcrypt.hashSync(String(newPassword), 10),
+    user.id
+  );
+  db.prepare('UPDATE password_reset_tokens SET used_at = ? WHERE id = ?').run(nowStr(), token.id);
+  res.json({ message: '密码重置成功，请使用新密码登录' });
 });
 
 export default router;

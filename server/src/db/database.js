@@ -39,9 +39,19 @@ db.exec(`
     code_id          INTEGER
   );
 
+  CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id    INTEGER NOT NULL REFERENCES users(id),
+    token_hash TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    used_at    TEXT,
+    created_at TEXT NOT NULL
+  );
+
   CREATE INDEX IF NOT EXISTS idx_records_user   ON checkin_records(user_id);
   CREATE INDEX IF NOT EXISTS idx_records_status ON checkin_records(status);
   CREATE INDEX IF NOT EXISTS idx_records_time   ON checkin_records(checkin_time);
+  CREATE INDEX IF NOT EXISTS idx_reset_tokens_hash ON password_reset_tokens(token_hash);
 `);
 
 /** 本地时间字符串 YYYY-MM-DD HH:mm:ss */
