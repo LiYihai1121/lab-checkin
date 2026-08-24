@@ -40,7 +40,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import * as echarts from 'echarts';
+let echarts;
 import request from '../../api/request';
 
 const overview = ref({ inLab: 0, todayCount: 0, totalUsers: 0, todayMinutes: 0, inLabList: [] });
@@ -85,6 +85,11 @@ async function load() {
 }
 
 onMounted(async () => {
+  // 按需动态加载 echarts，减少首屏体积
+  if (!echarts) {
+    const mod = await import('echarts');
+    echarts = mod.default || mod;
+  }
   trendChart = echarts.init(trendRef.value);
   rankChart = echarts.init(rankRef.value);
   window.addEventListener('resize', onResize);

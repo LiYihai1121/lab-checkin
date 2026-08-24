@@ -8,5 +8,18 @@ export default defineConfig({
     proxy: {
       '/api': 'http://localhost:3000'
     }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('echarts')) return 'vendor_echarts';
+            if (id.includes('element-plus')) return 'vendor_elementplus';
+            return 'vendor';
+          }
+        }
+      }
+    }
   }
 });
