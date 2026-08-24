@@ -1,8 +1,16 @@
 <template>
-  <div>
-    <el-row :gutter="16">
+  <div class="checkin-page">
+    <div class="page-intro">
+      <div>
+        <div class="eyebrow">TODAY'S CHECK-IN</div>
+        <h1>签到签退</h1>
+        <p>每次进入实验室前完成签到，离开时记得签退。</p>
+      </div>
+      <div class="date-chip">{{ new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'short' }) }}</div>
+    </div>
+    <el-row :gutter="18">
       <!-- 状态卡片 -->
-      <el-col :span="14">
+      <el-col :xs="24" :md="14">
         <el-card class="status-card">
           <template #header><b>签到状态</b></template>
 
@@ -36,13 +44,14 @@
       </el-col>
 
       <!-- 今日汇总 -->
-      <el-col :span="10">
-        <el-card>
+      <el-col :xs="24" :md="10">
+        <el-card class="summary-card">
           <template #header><b>今日汇总</b></template>
           <el-statistic title="今日累计时长" :value="status.todayMinutes || 0" suffix="分钟" />
         </el-card>
       </el-col>
     </el-row>
+    <div class="flow-note"><span>01</span> 获取现场动态码 <i>→</i> <span>02</span> 完成签到 <i>→</i> <span>03</span> 离开时签退</div>
   </div>
 </template>
 
@@ -111,6 +120,57 @@ onUnmounted(() => clearInterval(timer));
 .status-card {
   min-height: 320px;
 }
+.checkin-page {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.page-intro {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.eyebrow {
+  color: #e7795b;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.6px;
+}
+.page-intro h1 {
+  margin: 8px 0 4px;
+  color: #173d3d;
+  font-size: 30px;
+}
+.page-intro p {
+  margin: 0;
+  color: #7e8985;
+}
+.date-chip {
+  padding: 9px 14px;
+  border: 1px solid #ddd6c9;
+  border-radius: 20px;
+  color: #52615c;
+  background: rgba(255, 253, 248, 0.65);
+  font-size: 13px;
+}
+.summary-card {
+  min-height: 320px;
+}
+.flow-note {
+  margin: 22px 4px 0;
+  color: #8b9690;
+  font-size: 12px;
+  letter-spacing: .3px;
+}
+.flow-note span {
+  color: #e7795b;
+  font-weight: 800;
+}
+.flow-note i {
+  margin: 0 9px;
+  color: #c7bca9;
+  font-style: normal;
+}
 .active-box {
   display: flex;
   align-items: center;
@@ -155,5 +215,18 @@ onUnmounted(() => clearInterval(timer));
   font-size: 13px;
   margin-top: 12px;
   line-height: 1.6;
+}
+@media (max-width: 720px) {
+  .page-intro {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .page-intro h1 {
+    font-size: 26px;
+  }
+  .flow-note {
+    line-height: 2;
+  }
 }
 </style>

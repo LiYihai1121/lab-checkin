@@ -3,6 +3,7 @@ import { useUserStore } from '../stores/user';
 
 const routes = [
   { path: '/login', component: () => import('../views/Login.vue') },
+  { path: '/forgot-password', component: () => import('../views/ForgotPassword.vue') },
   {
     path: '/',
     component: () => import('../components/Layout.vue'),
@@ -38,7 +39,8 @@ const router = createRouter({ history: createWebHistory(), routes });
 
 router.beforeEach((to) => {
   const store = useUserStore();
-  if (to.path !== '/login' && !store.isLoggedIn) return '/login';
+  const isPublicRoute = to.path === '/login' || to.path === '/forgot-password';
+  if (!isPublicRoute && !store.isLoggedIn) return '/login';
   if (to.path === '/login' && store.isLoggedIn) return store.isAdmin ? '/admin/dashboard' : '/checkin';
   if (to.meta.adminOnly && !store.isAdmin) return '/checkin';
 });
