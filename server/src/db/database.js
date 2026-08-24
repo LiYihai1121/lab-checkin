@@ -54,17 +54,20 @@ export function fmtDate(d) {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 }
 
-/** 首次启动时创建默认管理员 admin / admin123 */
+/** 首次启动时创建默认管理员（可通过环境变量控制） */
 const userCount = db.prepare('SELECT COUNT(*) AS c FROM users').get().c;
-if (userCount === 0) {
+if (userCount === 0 && process.env.CREATE_DEFAULT_ADMIN !== 'false') {
+  const initPassword = process.env.ADMIN_PASSWORD || 'admin123';
   db.prepare('INSERT INTO users (username, password_hash, name, role, created_at) VALUES (?, ?, ?, ?, ?)').run(
     'admin',
-    bcrypt.hashSync('admin123', 10),
+    bcrypt.hashSync(initPassword, 10),
     '系统管理员',
     'admin',
     nowStr()
   );
-  console.log('[init] 已创建默认管理员账号：admin / admin123（请登录后尽快修改密码）');
+  console.info('[init] 已创建默认管理员账号：admin。请尽快修改初始密码（若需要自定义，请设置 ADMIN_PASSWORD 环境变量或将 CREATE_DEFAULT_ADMIN=false 禁用默认创建）');
+} else if (userCount === 0) {
+  console.warn('[init] 未创建默认管理员（CREATE_DEFAULT_ADMIN=false）。请通过管理员脚本或迁移添加管理员账号。');
 }
 
 export default db;

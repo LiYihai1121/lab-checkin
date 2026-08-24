@@ -1,4 +1,4 @@
-import axios from 'axios';
+﻿import axios from 'axios';
 import { ElMessage } from 'element-plus';
 import router from '../router';
 import { useUserStore } from '../stores/user';
@@ -7,7 +7,9 @@ const request = axios.create({ baseURL: '/api', timeout: 10000 });
 
 request.interceptors.request.use((config) => {
   const store = useUserStore();
-  if (store.token) config.headers.Authorization = `Bearer ${store.token}`;
+  if (store.token) {
+    config.headers.Authorization = `Bearer ${store.token}`;
+  }
   return config;
 });
 

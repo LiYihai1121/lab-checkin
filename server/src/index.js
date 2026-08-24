@@ -40,13 +40,23 @@ app.use((err, req, res, next) => {
 });
 
 const server = app.listen(PORT, () => {
-  console.log(`实验室签到系统后端已启动: http://localhost:${PORT}`);
+  console.info(`实验室签到系统后端已启动: http://localhost:${PORT}`);
 });
 
 function shutdown(signal) {
-  console.log(`[shutdown] 收到 ${signal}，正在停止服务...`);
+  console.info(`[shutdown] 收到 ${signal}，正在停止服务...`);
   server.close(() => process.exit(0));
 }
 
 process.once('SIGINT', () => shutdown('SIGINT'));
 process.once('SIGTERM', () => shutdown('SIGTERM'));
+
+// 捕获未处理的异常与拒绝，记录后优雅退出
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException]', err);
+  process.exit(1);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection]', reason);
+  process.exit(1);
+});
