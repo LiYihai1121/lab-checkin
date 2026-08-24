@@ -28,7 +28,7 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, reactive, ref } from 'vue';
+import { onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import QRCode from 'qrcode';
 import { Refresh } from '@element-plus/icons-vue';
 import request from '../../api/request';
