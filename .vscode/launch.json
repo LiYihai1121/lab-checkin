@@ -34,8 +34,7 @@
             "request": "launch",
             "name": "前端：Edge 调试页面",
             "url": "http://localhost:5173",
-            "webRoot": "${workspaceFolder}/web",
-            "userDataDir": false
+            "webRoot": "${workspaceFolder}/web"
         }
     ],
     "compounds": [
