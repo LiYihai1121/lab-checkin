@@ -4,8 +4,8 @@
 
 - This repository contains two independent Node.js packages: `server/` (Express API) and `web/` (Vue 3/Vite SPA). There is no root `package.json` or root build command.
 - Read [README.md](README.md) for the user-facing feature list, complete API table, setup steps, and deployment notes before changing cross-layer behavior.
-- Backend route ownership is split under `server/src/routes/`; registration and global middleware live in `server/src/index.js`. Database setup and the default administrator live in `server/src/db/database.js`.
-- Frontend pages are under `web/src/views/`; shared HTTP behavior is in `web/src/api/request.js`, authentication state is in `web/src/stores/user.js`, and access control is in `web/src/router/index.js`.
+- Backend route ownership is split under `server/src/routes/`; registration, rate limiting, and global middleware live in `server/src/index.js`. Database setup, indexes, and the default administrator live in `server/src/db/database.js`; shared backend helpers (password hashing, pagination, LIKE escaping, constraint-error detection) live in `server/src/utils/helpers.js`.
+- Frontend pages are under `web/src/views/`; shared HTTP behavior is in `web/src/api/request.js` (use the `silent: true` request config when a caller handles its own errors), authentication state is in `web/src/stores/user.js`, and access control is in `web/src/router/index.js`.
 
 ## Local commands
 
@@ -13,7 +13,7 @@
 - Backend production: from `server/`, run `npm start`.
 - Frontend development: `cd web` then `npm install` and `npm run dev`.
 - Frontend verification/build: from `web/`, run `npm run build`.
-- Neither package currently defines a test or lint script. For backend syntax-only checks, use `node --check` on the changed `.js` file; do not invent a test command.
+- Both packages define `npm test` (Vitest, one-shot run). Backend integration tests live in `server/tests/` and run against an in-memory SQLite database via `tests/setup.js` (`DB_PATH=:memory:`); never point them at the real database under `server/data/`. For backend syntax-only checks, use `node --check` on the changed `.js` file. Neither package has a lint script.
 - Node.js 22.5 or newer is required because the backend uses Node's built-in `node:sqlite`; do not add a separate SQLite service or driver without a concrete compatibility reason.
 
 ## Change conventions
@@ -28,5 +28,5 @@
 
 ## Environment notes
 
-- The default JWT secret is development-only. Production deployments must set `JWT_SECRET`; `PORT` and `CORS_ORIGIN` are also environment-controlled. See [README.md](README.md) for deployment examples.
-- The default administrator is intended for first-run setup only and should change the password after login.
+- The default JWT secret is development-only. Production deployments must set `JWT_SECRET` (the server refuses to start without it when `NODE_ENV=production`); `PORT`, `CORS_ORIGIN`, `DB_PATH`, `ADMIN_PASSWORD`, `CREATE_DEFAULT_ADMIN`, and `TRUST_PROXY` are also environment-controlled. See [README.md](README.md) for the full list and deployment examples.
+- The default administrator is intended for first-run setup only and should change the password after login. The login page must not display default credentials.

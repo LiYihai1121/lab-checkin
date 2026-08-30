@@ -63,12 +63,14 @@ npm run dev
 lab-checkin/
 ├── server/                  # 后端
 │   ├── data/                # SQLite 数据库文件（自动创建）
+│   ├── tests/               # Vitest 集成测试（内存库，不污染开发库）
 │   └── src/
-│       ├── index.js         # 入口，挂载路由
+│       ├── index.js         # 入口，挂载路由与限流中间件
 │       ├── db/database.js   # 建库建表 + 默认管理员初始化
 │       ├── middleware/auth.js  # JWT 认证 + 角色权限
+│       ├── utils/helpers.js # 密码哈希 / 分页 / LIKE 转义等共享工具
 │       └── routes/
-│           ├── auth.js      # 登录 / 当前用户 / 修改密码
+│           ├── auth.js      # 登录 / 当前用户 / 修改密码 / 找回码重置
 │           ├── users.js     # 用户管理（管理员）
 │           ├── checkin.js   # 签到 / 签退 / 状态
 │           ├── qrcode.js    # 动态签到码生成（管理员）
@@ -76,14 +78,18 @@ lab-checkin/
 │           └── stats.js     # 概览 / 日趋势 / 时长排行
 └── web/                     # 前端
     └── src/
-        ├── api/request.js   # axios 封装（token 注入、401 处理）
+        ├── api/request.js   # axios 封装（token 注入、401 处理、silent 模式）
         ├── stores/user.js   # 登录状态（Pinia）
-        ├── router/index.js  # 路由守卫（登录校验、admin 权限）
-        ├── components/Layout.vue
+        ├── router/index.js  # 路由守卫（登录校验、admin 权限、404 兜底）
+        ├── components/
+        │   ├── Layout.vue   # 侧栏导航 + 顶栏 + 修改密码
+        │   └── BrandLogo.vue
         └── views/
-            ├── Login.vue          # 登录页
-            ├── Checkin.vue        # 签到签退
+            ├── Login.vue          # 登录页（含服务健康探活）
+            ├── ForgotPassword.vue # 找回码重置密码
+            ├── Checkin.vue        # 签到签退（支持扫码）
             ├── MyRecords.vue      # 我的记录
+            ├── NotFound.vue       # 404 兜底页
             └── admin/
                 ├── Dashboard.vue    # 统计看板
                 ├── QrCodeView.vue   # 动态二维码
@@ -107,18 +113,37 @@ lab-checkin/
 | GET | `/api/records/my` | 登录 | 我的记录（分页/日期筛选） |
 | GET | `/api/records/all` | 管理员 | 全部记录（分页/关键字/日期） |
 | GET/POST/PUT/DELETE | `/api/users` | 管理员 | 用户增删改查 |
-| POST | `/api/users/:id/password-reset-token` | 管理员 | 生成一次性密码找回码 |
-| PUT | `/api/users/:id/password` | 管理员 | 重置密码 |
+| POST | `/api/users/:id/password-reset-token` | 管理员 | 生成一次性密码找回码（12 位，15 分钟有效） |
 | GET | `/api/stats/overview` | 管理员 | 实时概览 + 在馆列表 |
 | GET | `/api/stats/daily?days=30` | 管理员 | 每日签到人次 |
 | GET | `/api/stats/ranking` | 管理员 | 累计时长 Top 10 |
 
 ## 安全设计
 
-- 密码 bcrypt 哈希存储；JWT 有效期 24 小时
-- 动态签到码 60 秒过期并轮换，防止截图外传代签
-- 密码找回码由管理员生成，15 分钟过期且使用后失效，不依赖邮箱或手机号
+- 密码 bcrypt 哈希存储；JWT 有效期 24 小时；生产环境强制要求设置 `JWT_SECRET`
+- 登录、找回码重置、签到接口限流（防暴力破解）；签到码使用密码学安全随机数
+- 动态签到码 60 秒过期并轮换，防止截图外传代签；同一用户同时仅允许一条进行中签到（数据库唯一约束兜底）
+- 密码找回码由管理员生成，12 位、15 分钟过期且使用后失效，不依赖邮箱或手机号
 - 角色权限中间件：学生无法访问管理接口；禁止删除自己、至少保留一名管理员
+
+## 环境变量
+
+| 变量 | 说明 |
+|------|------|
+| `JWT_SECRET` | JWT 签名密钥，**生产环境必填**（缺失时启动失败） |
+| `PORT` | 后端端口，默认 3000 |
+| `CORS_ORIGIN` | 允许的前端来源，多个用英文逗号分隔；未设置时放行所有来源 |
+| `TRUST_PROXY` | 经反向代理部署时设为 `true`（或跳数），使限流按真实客户端 IP 计数 |
+| `DB_PATH` | 自定义 SQLite 文件路径（目录需已存在，`:memory:` 为内存库；默认 `server/data/lab-checkin.db`） |
+| `ADMIN_PASSWORD` | 首次启动创建的默认管理员密码，默认 `admin123` |
+| `CREATE_DEFAULT_ADMIN` | 设为 `false` 禁止首次启动自动创建默认管理员 |
+
+## 测试
+
+```bash
+cd server && npm test   # 后端集成测试（独立内存库，不影响开发数据）
+cd web && npm test      # 前端测试
+```
 
 ## 生产部署
 

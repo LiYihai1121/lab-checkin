@@ -9,6 +9,14 @@ server/data/*.db
 server/data/*.db-shm
 server/data/*.db-wal
 
+# env & secrets
+.env
+.env.*
+
+# tooling local state
+.mimosa/
+coverage/
+
 # logs & misc
 *.log
 .DS_Store
