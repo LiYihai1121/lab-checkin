@@ -117,4 +117,42 @@ describe('auth', () => {
       .send({ username: 'stu_reset', resetCode: code, newPassword: crypto.randomBytes(8).toString('hex') });
     expect(res.status).toBe(400);
   });
+
+  it('invalidates old tokens after role change or account deletion', async () => {
+    const auth = { Authorization: `Bearer ${adminToken}` };
+    // 降级：被降级管理员的旧 token 不再持有管理权限
+    const admin2Pwd = crypto.randomBytes(8).toString('hex');
+    const created = await request(app)
+      .post('/api/users')
+      .set(auth)
+      .send({ username: 'stu_demote', password: admin2Pwd, name: '降级同学', role: 'admin' });
+    const admin2Id = created.body.id;
+    const admin2Token = (
+      await request(app).post('/api/auth/login').send({ username: 'stu_demote', password: admin2Pwd })
+    ).body.token;
+    expect(
+      (await request(app).get('/api/users').set('Authorization', `Bearer ${admin2Token}`)).status
+    ).toBe(200);
+    await request(app).put(`/api/users/${admin2Id}`).set(auth).send({ role: 'student' });
+    expect(
+      (await request(app).get('/api/users').set('Authorization', `Bearer ${admin2Token}`)).status
+    ).toBe(403);
+
+    // 删除：被删账号的旧 token 立即失效
+    const stuPwd = crypto.randomBytes(8).toString('hex');
+    const stu = await request(app)
+      .post('/api/users')
+      .set(auth)
+      .send({ username: 'stu_del', password: stuPwd, name: '删除同学', role: 'student' });
+    const stuToken = (
+      await request(app).post('/api/auth/login').send({ username: 'stu_del', password: stuPwd })
+    ).body.token;
+    expect(
+      (await request(app).get('/api/auth/me').set('Authorization', `Bearer ${stuToken}`)).status
+    ).toBe(200);
+    await request(app).delete(`/api/users/${stu.body.id}`).set(auth);
+    expect(
+      (await request(app).get('/api/auth/me').set('Authorization', `Bearer ${stuToken}`)).status
+    ).toBe(401);
+  });
 });

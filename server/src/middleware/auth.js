@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import db from '../db/database.js';
 
 // 生产环境必须显式配置 JWT_SECRET，防止使用公开默认值签发可伪造的 token
 if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
@@ -16,18 +17,29 @@ export function signToken(user) {
   );
 }
 
-/** 登录校验中间件 */
+/**
+ * 登录校验中间件：验证 token 后实时读取用户，使角色调整与账号删除即时生效
+ * （JWT 有效期内被降级/删除的账号不再持有旧权限）
+ */
 export function authenticate(req, res, next) {
   const header = req.headers.authorization || '';
   if (!header.startsWith('Bearer ')) {
     return res.status(401).json({ message: '未登录' });
   }
+  let payload;
   try {
-    req.user = jwt.verify(header.slice(7), JWT_SECRET);
-    next();
+    payload = jwt.verify(header.slice(7), JWT_SECRET);
   } catch {
     return res.status(401).json({ message: '登录已过期，请重新登录' });
   }
+  const user = db
+    .prepare('SELECT id, username, name, role FROM users WHERE id = ?')
+    .all(payload.id)[0];
+  if (!user) {
+    return res.status(401).json({ message: '账号不存在或已被删除' });
+  }
+  req.user = user;
+  next();
 }
 
 /** 管理员权限中间件（需在 authenticate 之后使用） */

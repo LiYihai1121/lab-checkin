@@ -49,4 +49,9 @@ router.beforeEach((to) => {
   if (to.meta.adminOnly && !store.isAdmin) return '/checkin';
 });
 
+// 浏览器标签页标题随页面切换
+router.afterEach((to) => {
+  document.title = to.meta?.title ? `${to.meta.title} · 实验室签到系统` : '实验室签到系统';
+});
+
 export default router;

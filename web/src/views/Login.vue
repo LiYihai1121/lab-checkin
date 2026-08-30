@@ -36,6 +36,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { User, Lock } from '@element-plus/icons-vue';
 import request from '../api/request';
+import { safeRedirect } from '../utils/security';
 import { useUserStore } from '../stores/user';
 import BrandLogo from '../components/BrandLogo.vue';
 
@@ -63,11 +64,6 @@ onMounted(async () => {
     health.value = 'down';
   }
 });
-
-/** 只允许站内相对路径回跳，防开放重定向 */
-function safeRedirect(target) {
-  return typeof target === 'string' && target.startsWith('/') && !target.startsWith('//') ? target : '';
-}
 
 async function onSubmit() {
   const valid = await formRef.value.validate().catch(() => false);

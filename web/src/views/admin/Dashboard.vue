@@ -85,6 +85,14 @@ async function load() {
     });
     const ranking = await request.get('/stats/ranking', { silent: true });
     rankChart?.setOption({
+      // 无出勤数据时以居中文字代替空坐标系
+      title: {
+        show: ranking.length === 0,
+        text: '暂无出勤数据',
+        left: 'center',
+        top: 'middle',
+        textStyle: { color: '#b8ab97', fontSize: 13, fontWeight: 500 }
+      },
       tooltip: {},
       grid: { left: 80, right: 30, top: 10, bottom: 30 },
       xAxis: { type: 'value' },
