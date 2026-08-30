@@ -16,6 +16,7 @@ server/data/*.db-wal
 # tooling local state
 .mimosa/
 coverage/
+gui-test-screenshots/
 
 # logs & misc
 *.log

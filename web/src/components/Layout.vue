@@ -36,7 +36,7 @@
 
     <!-- 修改密码弹窗 -->
     <el-dialog v-model="pwdDialog.visible" title="修改密码" width="400px">
-      <el-form ref="pwdFormRef" :model="pwdDialog" :rules="pwdRules" label-width="90px"
+      <el-form ref="pwdFormRef" :model="pwdDialog" :rules="pwdRules" label-width="100px"
         @keyup.enter="onChangePwd">
         <el-form-item label="原密码" prop="oldPassword">
           <el-input v-model="pwdDialog.oldPassword" type="password" show-password placeholder="输入当前密码" />
