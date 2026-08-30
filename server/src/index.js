@@ -77,9 +77,21 @@ const server = app.listen(PORT, () => {
   console.info(`实验室签到系统后端已启动: http://localhost:${PORT}`);
 });
 
+// 端口被占用（如 --watch 重启时旧实例尚未退出）时给出明确原因而非裸堆栈
+server.on('error', (err) => {
+  console.error(
+    `[启动失败] ${err.code === 'EADDRINUSE' ? `端口 ${PORT} 已被占用，可能有旧实例尚未退出` : err.message}`
+  );
+  process.exit(1);
+});
+
 function shutdown(signal) {
   console.info(`[shutdown] 收到 ${signal}，正在停止服务...`);
+  // keep-alive 连接与调试器等待会挂住退出流程，导致 --watch 重启时端口无法释放：
+  // 立即断开全部连接并限时兜底退出
+  server.closeAllConnections();
   server.close(() => process.exit(0));
+  setTimeout(() => process.exit(0), 1500).unref();
 }
 
 process.once('SIGINT', () => shutdown('SIGINT'));
