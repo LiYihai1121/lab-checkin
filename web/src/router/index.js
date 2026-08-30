@@ -30,7 +30,8 @@ const routes = [
         path: 'admin/users',
         component: () => import('../views/admin/UsersAdmin.vue'),
         meta: { title: '用户管理', adminOnly: true }
-      }
+      },
+      { path: ':pathMatch(.*)*', component: () => import('../views/NotFound.vue'), meta: { title: '页面不存在' } }
     ]
   }
 ];
@@ -40,7 +41,10 @@ const router = createRouter({ history: createWebHistory(), routes });
 router.beforeEach((to) => {
   const store = useUserStore();
   const isPublicRoute = to.path === '/login' || to.path === '/forgot-password';
-  if (!isPublicRoute && !store.isLoggedIn) return '/login';
+  if (!isPublicRoute && !store.isLoggedIn) {
+    // 记录目标路径，登录成功后跳回；扫码进入的 code 参数也在 fullPath 中保留
+    return { path: '/login', query: { redirect: to.fullPath } };
+  }
   if (to.path === '/login' && store.isLoggedIn) return store.isAdmin ? '/admin/dashboard' : '/checkin';
   if (to.meta.adminOnly && !store.isAdmin) return '/checkin';
 });

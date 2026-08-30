@@ -5,10 +5,10 @@
         end-placeholder="结束日期" value-format="YYYY-MM-DD" style="width: 260px" />
       <el-input v-model="keyword" placeholder="用户名 / 姓名" clearable style="width: 200px"
         @keyup.enter="load(1)" />
-      <el-button type="primary" :icon="Search" @click="load(1)">查询</el-button>
+      <el-button type="primary" :icon="Search" :loading="tableLoading" @click="load(1)">查询</el-button>
     </div>
 
-    <el-table :data="list" stripe>
+    <el-table :data="list" stripe v-loading="tableLoading">
       <el-table-column prop="name" label="姓名" width="120" />
       <el-table-column prop="username" label="用户名" width="140" />
       <el-table-column prop="checkin_time" label="签到时间" width="180" />
@@ -27,8 +27,9 @@
       </el-table-column>
     </el-table>
 
-    <el-pagination class="pager" background layout="total, prev, pager, next"
-      :total="total" :page-size="pageSize" :current-page="page" @current-change="load" />
+    <el-pagination class="pager" background layout="total, prev, pager, next, sizes"
+      :total="total" :page-size="pageSize" :current-page="page" :page-sizes="[10, 20, 50]"
+      @current-change="load" @size-change="(s) => { pageSize = s; load(1); }" />
   </el-card>
 </template>
 
@@ -43,20 +44,28 @@ const page = ref(1);
 const pageSize = ref(10);
 const keyword = ref('');
 const range = ref(null);
+const tableLoading = ref(false);
 
 async function load(p = page.value) {
   page.value = p;
-  const data = await request.get('/records/all', {
-    params: {
-      page: p,
-      pageSize: pageSize.value,
-      keyword: keyword.value,
-      start: range.value?.[0],
-      end: range.value?.[1]
-    }
-  });
-  list.value = data.list;
-  total.value = data.total;
+  tableLoading.value = true;
+  try {
+    const data = await request.get('/records/all', {
+      params: {
+        page: p,
+        pageSize: pageSize.value,
+        keyword: keyword.value,
+        start: range.value?.[0],
+        end: range.value?.[1]
+      }
+    });
+    list.value = data.list;
+    total.value = data.total;
+  } catch {
+    // 错误提示由请求拦截器统一处理
+  } finally {
+    tableLoading.value = false;
+  }
 }
 
 onMounted(() => load(1));

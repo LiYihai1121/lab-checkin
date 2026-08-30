@@ -1,5 +1,7 @@
 <template>
   <div>
+    <el-alert v-if="loadError" class="load-error" type="warning" :closable="false" show-icon
+      title="统计数据刷新失败，将在下一轮自动重试" />
     <el-row :gutter="16">
       <el-col :xs="24" :sm="12" :lg="6" v-for="card in cards" :key="card.label">
         <el-card class="stat-card">
@@ -41,14 +43,17 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 let echarts;
+import { ElMessage } from 'element-plus';
 import request from '../../api/request';
 
 const overview = ref({ inLab: 0, todayCount: 0, totalUsers: 0, todayMinutes: 0, inLabList: [] });
 const trendRef = ref();
 const rankRef = ref();
+const loadError = ref(false);
 let trendChart;
 let rankChart;
 let timer;
+let loadInProgress = false;
 
 const cards = computed(() => [
   { label: '当前在馆', value: overview.value.inLab, color: '#67c23a' },
@@ -65,23 +70,37 @@ function elapsed(from) {
 }
 
 async function load() {
-  overview.value = await request.get('/stats/overview');
-  const daily = await request.get('/stats/daily', { params: { days: 30 } });
-  trendChart?.setOption({
-    tooltip: { trigger: 'axis' },
-    grid: { left: 40, right: 20, top: 20, bottom: 30 },
-    xAxis: { type: 'category', data: daily.map((d) => d.date) },
-    yAxis: { type: 'value', minInterval: 1 },
-    series: [{ type: 'line', smooth: true, areaStyle: {}, data: daily.map((d) => d.count), itemStyle: { color: '#409eff' } }]
-  });
-  const ranking = await request.get('/stats/ranking');
-  rankChart?.setOption({
-    tooltip: {},
-    grid: { left: 80, right: 30, top: 10, bottom: 30 },
-    xAxis: { type: 'value' },
-    yAxis: { type: 'category', data: ranking.map((r) => r.name).reverse() },
-    series: [{ type: 'bar', data: ranking.map((r) => r.minutes || 0).reverse(), itemStyle: { color: '#e6a23c' } }]
-  });
+  // 上一轮请求未完成时跳过本轮，避免慢网下请求重叠
+  if (loadInProgress) return;
+  loadInProgress = true;
+  try {
+    overview.value = await request.get('/stats/overview', { silent: true });
+    const daily = await request.get('/stats/daily', { params: { days: 30 }, silent: true });
+    trendChart?.setOption({
+      tooltip: { trigger: 'axis' },
+      grid: { left: 40, right: 20, top: 20, bottom: 30 },
+      xAxis: { type: 'category', data: daily.map((d) => d.date) },
+      yAxis: { type: 'value', minInterval: 1 },
+      series: [{ type: 'line', smooth: true, areaStyle: {}, data: daily.map((d) => d.count), itemStyle: { color: '#409eff' } }]
+    });
+    const ranking = await request.get('/stats/ranking', { silent: true });
+    rankChart?.setOption({
+      tooltip: {},
+      grid: { left: 80, right: 30, top: 10, bottom: 30 },
+      xAxis: { type: 'value' },
+      yAxis: { type: 'category', data: ranking.map((r) => r.name).reverse() },
+      series: [{ type: 'bar', data: ranking.map((r) => r.minutes || 0).reverse(), itemStyle: { color: '#e6a23c' } }]
+    });
+    loadError.value = false;
+  } catch {
+    // 轮询失败静默处理：横幅提示一次，恢复后自动清除，避免反复弹错
+    if (!loadError.value) {
+      loadError.value = true;
+      ElMessage.warning('统计数据刷新失败，稍后自动重试');
+    }
+  } finally {
+    loadInProgress = false;
+  }
 }
 
 onMounted(async () => {
@@ -120,6 +139,9 @@ function onResize() {
 </script>
 
 <style scoped>
+.load-error {
+  margin-bottom: 16px;
+}
 .stat-card {
   text-align: center;
 }

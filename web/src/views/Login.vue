@@ -6,7 +6,10 @@
         <div class="eyebrow">LAB CHECK-IN SYSTEM</div>
         <h1>每一次进入，<br /><em>都有迹可循。</em></h1>
         <p>让实验室出入更清晰，让每一分钟投入都被准确记录。</p>
-        <div class="brand-foot"><span class="status-dot"></span> 系统运行中 · 数据实时同步</div>
+        <div class="brand-foot">
+          <span class="status-dot" :class="health"></span>
+          {{ healthText }}
+        </div>
       </section>
       <el-card class="login-card">
         <div class="form-eyebrow">WELCOME BACK</div>
@@ -22,15 +25,13 @@
           <el-button type="primary" class="login-btn" :loading="loading" @click="onSubmit">进入系统</el-button>
         </el-form>
         <router-link class="forgot-link" to="/forgot-password">忘记密码？找回账号</router-link>
-        <el-alert class="tip" type="info" :closable="false"
-          title="默认管理员：admin / admin123，学生账号由管理员创建" />
       </el-card>
     </div>
   </div>
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { User, Lock } from '@element-plus/icons-vue';
@@ -49,18 +50,34 @@ const rules = {
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
 };
 
+// 真实健康探活（fetch 直连，避免走 axios 拦截器的错误弹窗）
+const health = ref('checking');
+const healthText = computed(
+  () => ({ checking: '正在连接服务…', ok: '系统运行中 · 数据实时同步', down: '服务连接异常，请稍后重试' })[health.value]
+);
+onMounted(async () => {
+  try {
+    const res = await fetch('/api/health');
+    health.value = res.ok ? 'ok' : 'down';
+  } catch {
+    health.value = 'down';
+  }
+});
+
+/** 只允许站内相对路径回跳，防开放重定向 */
+function safeRedirect(target) {
+  return typeof target === 'string' && target.startsWith('/') && !target.startsWith('//') ? target : '';
+}
+
 async function onSubmit() {
-  await formRef.value.validate().catch(() => Promise.reject());
+  const valid = await formRef.value.validate().catch(() => false);
+  if (!valid) return;
   loading.value = true;
   try {
     const data = await request.post('/auth/login', form);
     store.setAuth(data.token, data.user);
     ElMessage.success(`欢迎，${data.user.name}`);
-    if (route.query.redirect) {
-      router.push(String(route.query.redirect));
-    } else {
-      router.push(data.user.role === 'admin' ? '/admin/dashboard' : '/checkin');
-    }
+    router.push(safeRedirect(route.query.redirect) || (data.user.role === 'admin' ? '/admin/dashboard' : '/checkin'));
   } finally {
     loading.value = false;
   }
@@ -131,7 +148,13 @@ async function onSubmit() {
   height: 7px;
   margin-right: 6px;
   border-radius: 50%;
+  background: #f4c95d;
+}
+.status-dot.ok {
   background: #8ed081;
+}
+.status-dot.down {
+  background: #f56c6c;
 }
 .login-card {
   display: flex;
@@ -157,9 +180,6 @@ async function onSubmit() {
   height: 46px;
   border: 0;
   background: #e7795b;
-}
-.tip {
-  margin-top: 16px;
 }
 .forgot-link {
   display: block;

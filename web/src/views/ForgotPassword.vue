@@ -24,7 +24,7 @@
           <el-input v-model="form.username" placeholder="用户名" />
         </el-form-item>
         <el-form-item prop="resetCode">
-          <el-input v-model="form.resetCode" placeholder="管理员提供的找回码" />
+          <el-input v-model="form.resetCode" placeholder="管理员提供的 12 位找回码" maxlength="12" />
         </el-form-item>
         <el-form-item prop="newPassword">
           <el-input v-model="form.newPassword" type="password" show-password placeholder="新密码（至少 6 位）" />
@@ -56,7 +56,8 @@ const rules = {
 };
 
 async function onSubmit() {
-  await formRef.value.validate().catch(() => Promise.reject());
+  const valid = await formRef.value.validate().catch(() => false);
+  if (!valid) return;
   loading.value = true;
   try {
     await request.post('/auth/password/reset', form);

@@ -25,21 +25,43 @@
           </span>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item command="logout">退出登录</el-dropdown-item>
+              <el-dropdown-item command="password">修改密码</el-dropdown-item>
+              <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
       </el-header>
       <el-main class="main"><router-view /></el-main>
     </el-container>
+
+    <!-- 修改密码弹窗 -->
+    <el-dialog v-model="pwdDialog.visible" title="修改密码" width="400px">
+      <el-form ref="pwdFormRef" :model="pwdDialog" :rules="pwdRules" label-width="90px"
+        @keyup.enter="onChangePwd">
+        <el-form-item label="原密码" prop="oldPassword">
+          <el-input v-model="pwdDialog.oldPassword" type="password" show-password placeholder="输入当前密码" />
+        </el-form-item>
+        <el-form-item label="新密码" prop="newPassword">
+          <el-input v-model="pwdDialog.newPassword" type="password" show-password placeholder="至少 6 位" />
+        </el-form-item>
+        <el-form-item label="确认新密码" prop="confirmPassword">
+          <el-input v-model="pwdDialog.confirmPassword" type="password" show-password placeholder="再次输入新密码" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="pwdDialog.visible = false">取消</el-button>
+        <el-button type="primary" :loading="pwdSaving" @click="onChangePwd">确认修改</el-button>
+      </template>
+    </el-dialog>
   </el-container>
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
-import { ArrowDown } from '@element-plus/icons-vue';
+import { ArrowDown, DataAnalysis, Document, Postcard, Tickets, User as UserIcon, AlarmClock } from '@element-plus/icons-vue';
+import request from '../api/request';
 import { useUserStore } from '../stores/user';
 import BrandLogo from './BrandLogo.vue';
 
@@ -47,14 +69,14 @@ const store = useUserStore();
 const router = useRouter();
 
 const studentMenus = [
-  { path: '/checkin', label: '签到签退', icon: 'AlarmClock' },
-  { path: '/my-records', label: '我的记录', icon: 'Tickets' }
+  { path: '/checkin', label: '签到签退', icon: AlarmClock },
+  { path: '/my-records', label: '我的记录', icon: Tickets }
 ];
 const adminMenus = [
-  { path: '/admin/dashboard', label: '统计看板', icon: 'DataAnalysis' },
-  { path: '/admin/qrcode', label: '签到二维码', icon: 'Postcard' },
-  { path: '/admin/records', label: '记录管理', icon: 'Document' },
-  { path: '/admin/users', label: '用户管理', icon: 'User' }
+  { path: '/admin/dashboard', label: '统计看板', icon: DataAnalysis },
+  { path: '/admin/qrcode', label: '签到二维码', icon: Postcard },
+  { path: '/admin/records', label: '记录管理', icon: Document },
+  { path: '/admin/users', label: '用户管理', icon: UserIcon }
 ];
 const menus = computed(() => (store.isAdmin ? adminMenus : studentMenus));
 
@@ -63,8 +85,62 @@ function onCommand(cmd) {
     store.logout();
     ElMessage.success('已退出登录');
     router.push('/login');
+  } else if (cmd === 'password') {
+    openPwdDialog();
   }
 }
+
+// ---- 修改密码 ----
+const pwdFormRef = ref();
+const pwdSaving = ref(false);
+const pwdDialog = reactive({ visible: false, oldPassword: '', newPassword: '', confirmPassword: '' });
+const pwdRules = {
+  oldPassword: [{ required: true, message: '请输入原密码', trigger: 'blur' }],
+  newPassword: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, message: '新密码至少 6 位', trigger: 'blur' }
+  ],
+  confirmPassword: [
+    { required: true, message: '请再次输入新密码', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (value !== pwdDialog.newPassword) callback(new Error('两次输入的密码不一致'));
+        else callback();
+      },
+      trigger: 'blur'
+    }
+  ]
+};
+
+function openPwdDialog() {
+  Object.assign(pwdDialog, { visible: true, oldPassword: '', newPassword: '', confirmPassword: '' });
+}
+
+async function onChangePwd() {
+  const valid = await pwdFormRef.value?.validate().catch(() => false);
+  if (!valid) return;
+  pwdSaving.value = true;
+  try {
+    const data = await request.put('/auth/password', {
+      oldPassword: pwdDialog.oldPassword,
+      newPassword: pwdDialog.newPassword
+    });
+    ElMessage.success(data.message || '密码修改成功');
+    pwdDialog.visible = false;
+  } finally {
+    pwdSaving.value = false;
+  }
+}
+
+// 会话自愈：拉取最新用户信息，避免本地缓存的姓名/角色过期（401 由拦截器统一登出）
+onMounted(async () => {
+  try {
+    const data = await request.get('/auth/me', { silent: true });
+    if (data.user) store.setUser(data.user);
+  } catch {
+    // 静默失败即可
+  }
+});
 </script>
 
 <style scoped>

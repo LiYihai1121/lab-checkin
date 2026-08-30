@@ -11,10 +11,17 @@
     <el-row :gutter="18">
       <!-- 状态卡片 -->
       <el-col :xs="24" :md="14">
-        <el-card class="status-card">
+        <el-card class="status-card" v-loading="statusLoading">
           <template #header><b>签到状态</b></template>
 
-          <template v-if="status.active">
+          <template v-if="statusError">
+            <el-empty description="签到状态加载失败" :image-size="80" />
+            <el-button type="primary" size="large" class="big-btn" :loading="statusLoading" @click="loadStatus">
+              重新加载
+            </el-button>
+          </template>
+
+          <template v-else-if="status.active">
             <div class="active-box">
               <div class="active-dot"></div>
               <div>
@@ -29,10 +36,10 @@
             </el-button>
           </template>
 
-          <template v-else>
+          <template v-else-if="statusLoaded">
             <el-empty description="当前未签到" :image-size="80" />
             <el-input v-model="code" size="large" maxlength="6" placeholder="输入 6 位动态签到码（或扫描现场二维码）"
-              class="code-input" @keyup.enter="onCheckin">
+              class="code-input" @input="code = code.toUpperCase()" @keyup.enter="onCheckin">
               <template #prepend><el-icon><Key /></el-icon></template>
             </el-input>
             <el-button type="primary" size="large" class="big-btn" :loading="loading" @click="onCheckin">
@@ -50,7 +57,7 @@
       <el-col :xs="24" :md="10">
         <el-card class="summary-card">
           <template #header><b>今日汇总</b></template>
-          <el-statistic title="今日累计时长" :value="status.todayMinutes || 0" suffix="分钟" />
+          <el-statistic title="今日累计时长（不含进行中）" :value="status.todayMinutes || 0" suffix="分钟" />
         </el-card>
       </el-col>
     </el-row>
@@ -70,16 +77,20 @@
 
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Camera, Key, Picture } from '@element-plus/icons-vue';
 import { Html5Qrcode } from 'html5-qrcode';
 import request from '../api/request';
 
 const route = useRoute();
+const router = useRouter();
 const status = reactive({ active: null, todayMinutes: 0, todaySessions: 0 });
 const code = ref('');
 const loading = ref(false);
+const statusLoading = ref(false);
+const statusLoaded = ref(false);
+const statusError = ref(false);
 const nowTick = ref(Date.now());
 const scannerVisible = ref(false);
 const scanError = ref('');
@@ -98,8 +109,17 @@ const elapsedText = computed(() => {
 });
 
 async function loadStatus() {
-  const data = await request.get('/checkin/status');
-  Object.assign(status, data);
+  statusLoading.value = true;
+  statusError.value = false;
+  try {
+    const data = await request.get('/checkin/status', { silent: true });
+    Object.assign(status, data);
+    statusLoaded.value = true;
+  } catch {
+    statusError.value = true;
+  } finally {
+    statusLoading.value = false;
+  }
 }
 
 async function onCheckin() {
@@ -116,7 +136,10 @@ async function onCheckin() {
 }
 
 async function onCheckout() {
-  await ElMessageBox.confirm('确认签退？', '提示', { type: 'warning' }).catch(() => Promise.reject());
+  const ok = await ElMessageBox.confirm('确认签退？', '提示', { type: 'warning' })
+    .then(() => true)
+    .catch(() => false);
+  if (!ok) return;
   loading.value = true;
   try {
     const data = await request.post('/checkin/out');
@@ -177,10 +200,19 @@ async function scanImage(event) {
   await stopScanner();
   try {
     const imageScanner = new Html5Qrcode('checkin-qr-reader');
-    const decodedText = await imageScanner.scanFile(file, true);
-    await imageScanner.clear();
-    scanning.value = false;
-    await handleDecoded(decodedText);
+    try {
+      const decodedText = await imageScanner.scanFile(file, true);
+      await imageScanner.clear();
+      scanning.value = false;
+      await handleDecoded(decodedText);
+    } catch (err) {
+      try {
+        imageScanner.clear();
+      } catch {
+        // 识别失败时实例可能已不可清理，忽略
+      }
+      throw err;
+    }
   } catch {
     scanning.value = false;
     scanError.value = '未识别到有效二维码，请重新选择清晰图片。';
@@ -199,9 +231,12 @@ async function stopScanner() {
 }
 
 onMounted(async () => {
-  // 扫码进入时自动填入 ?code=xxx
-  if (route.query.code && !status.active) code.value = String(route.query.code);
   await loadStatus();
+  // 扫码进入时自动填入 ?code=xxx（需已加载状态且未签到），随后清理 query 防止刷新后误用过期码
+  if (statusLoaded.value && !status.active && route.query.code) {
+    code.value = String(route.query.code).toUpperCase();
+    router.replace({ query: {} });
+  }
   timer = setInterval(() => (nowTick.value = Date.now()), 1000);
 });
 onUnmounted(() => {

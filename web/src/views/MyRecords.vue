@@ -3,10 +3,10 @@
     <div class="toolbar">
       <el-date-picker v-model="range" type="daterange" range-separator="至" start-placeholder="开始日期"
         end-placeholder="结束日期" value-format="YYYY-MM-DD" style="width: 280px" />
-      <el-button type="primary" :icon="Search" @click="load(1)">查询</el-button>
+      <el-button type="primary" :icon="Search" :loading="tableLoading" @click="load(1)">查询</el-button>
     </div>
 
-    <el-table :data="list" stripe>
+    <el-table :data="list" stripe v-loading="tableLoading">
       <el-table-column prop="checkin_time" label="签到时间" width="180" />
       <el-table-column prop="checkout_time" label="签退时间" width="180">
         <template #default="{ row }">{{ row.checkout_time || '—' }}</template>
@@ -39,18 +39,26 @@ const total = ref(0);
 const page = ref(1);
 const pageSize = ref(10);
 const range = ref(null);
+const tableLoading = ref(false);
 
 async function load(p = page.value) {
   page.value = p;
+  tableLoading.value = true;
   const params = {
     page: p,
     pageSize: pageSize.value,
     start: range.value?.[0],
     end: range.value?.[1]
   };
-  const data = await request.get('/records/my', { params });
-  list.value = data.list;
-  total.value = data.total;
+  try {
+    const data = await request.get('/records/my', { params });
+    list.value = data.list;
+    total.value = data.total;
+  } catch {
+    // 错误提示由请求拦截器统一处理
+  } finally {
+    tableLoading.value = false;
+  }
 }
 
 onMounted(() => load(1));
