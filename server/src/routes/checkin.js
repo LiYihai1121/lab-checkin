@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import db, { nowStr } from '../db/database.js';
+import { isUniqueConstraintError } from '../utils/helpers.js';
 import { authenticate } from '../middleware/auth.js';
 
 const router = Router();
@@ -49,12 +50,21 @@ router.post('/in', (req, res) => {
     return res.status(400).json({ message: '您已处于签到状态，请先签退' });
   }
 
-  const result = db
-    .prepare(
-      "INSERT INTO checkin_records (user_id, checkin_time, status, code_id) VALUES (?, ?, 'checked_in', ?)"
-    )
-    .run(req.user.id, nowStr(), codeRow.id);
-  const record = db.prepare('SELECT * FROM checkin_records WHERE id = ?').get(Number(result.lastInsertRowid));
+  let result;
+  try {
+    result = db
+      .prepare(
+        "INSERT INTO checkin_records (user_id, checkin_time, status, code_id) VALUES (?, ?, 'checked_in', ?)"
+      )
+      .run(req.user.id, nowStr(), codeRow.id);
+  } catch (err) {
+    // 并发签到由部分唯一索引兜底，避免同一用户出现两条进行中记录
+    if (isUniqueConstraintError(err)) {
+      return res.status(400).json({ message: '您已处于签到状态，请先签退' });
+    }
+    throw err;
+  }
+  const record = db.prepare('SELECT * FROM checkin_records WHERE id = ?').all(Number(result.lastInsertRowid))[0];
   res.json({ message: '签到成功', record });
 });
 
@@ -68,10 +78,16 @@ router.post('/out', (req, res) => {
   }
   const checkoutTime = nowStr();
   const durationMinutes = Math.max(0, Math.round((ts(checkoutTime) - ts(active.checkin_time)) / 60000));
-  db.prepare(
-    "UPDATE checkin_records SET checkout_time = ?, duration_minutes = ?, status = 'completed' WHERE id = ?"
-  ).run(checkoutTime, durationMinutes, active.id);
-  const record = db.prepare('SELECT * FROM checkin_records WHERE id = ?').get(active.id);
+  // 条件更新保证并发签退只结算一次
+  const info = db
+    .prepare(
+      "UPDATE checkin_records SET checkout_time = ?, duration_minutes = ?, status = 'completed' WHERE id = ? AND status = 'checked_in'"
+    )
+    .run(checkoutTime, durationMinutes, active.id);
+  if (info.changes === 0) {
+    return res.status(400).json({ message: '当前没有进行中的签到' });
+  }
+  const record = db.prepare('SELECT * FROM checkin_records WHERE id = ?').all(active.id)[0];
   res.json({ message: `签退成功，本次共 ${durationMinutes} 分钟`, record });
 });
 

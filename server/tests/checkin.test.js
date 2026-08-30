@@ -1,69 +1,111 @@
-import express from 'express';
+import { describe, it, expect, beforeAll } from 'vitest';
+import crypto from 'node:crypto';
 import request from 'supertest';
-import db, { nowStr } from '../src/db/database.js';
-import checkinRoutes from '../src/routes/checkin.js';
+import db, { nowStr, fmtDate } from '../src/db/database.js';
 import { signToken } from '../src/middleware/auth.js';
+import { makeApp } from './helpers.js';
 
-// Helper to create an app instance mounting the router
-function makeApp() {
-  const app = express();
-  app.use(express.json());
-  app.use('/api/checkin', checkinRoutes);
-  return app;
+const app = makeApp();
+
+const FAKE_HASH = `bcrypt$${crypto.randomBytes(12).toString('hex')}`;
+
+function insertUser() {
+  const result = db
+    .prepare('INSERT INTO users (username, password_hash, name, role, created_at) VALUES (?, ?, ?, ?, ?)')
+    .run(`stu_chk_${crypto.randomBytes(4).toString('hex')}`, FAKE_HASH, '测试用户', 'student', nowStr());
+  return Number(result.lastInsertRowid);
 }
 
-describe('checkin routes (integration)', () => {
-  let userId;
+function insertCode(ttlMs) {
+  const code = crypto.randomBytes(4).toString('hex').toUpperCase();
+  db.prepare('INSERT INTO checkin_codes (code, expires_at, created_at) VALUES (?, ?, ?)').run(
+    code,
+    fmtDate(new Date(Date.now() + ttlMs)),
+    nowStr()
+  );
+  return code;
+}
+
+describe('checkin routes', () => {
   let token;
-  let codeValue;
+  let userId;
 
   beforeAll(() => {
-    // create a test user
-    const now = nowStr();
-    const result = db
-      .prepare('INSERT INTO users (username, password_hash, name, role, created_at) VALUES (?, ?, ?, ?, ?)')
-      .run(`testuser_${Date.now()}`, 'hash', '测试用户', 'student', now);
-    userId = Number(result.lastInsertRowid);
-    const userRow = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
-    token = signToken(userRow);
-
-    // create a valid checkin code
-    codeValue = `TESTCODE${Date.now()}`.slice(0, 20).toUpperCase();
-    const expires = new Date(Date.now() + 5 * 60 * 1000);
-    const expiresStr = `${expires.getFullYear()}-${String(expires.getMonth() + 1).padStart(2,'0')}-${String(expires.getDate()).padStart(2,'0')} ${String(expires.getHours()).padStart(2,'0')}:${String(expires.getMinutes()).padStart(2,'0')}:${String(expires.getSeconds()).padStart(2,'0')}`;
-    db.prepare('INSERT INTO checkin_codes (code, expires_at, created_at) VALUES (?, ?, ?)').run(codeValue, expiresStr, now);
+    userId = insertUser();
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').all(userId)[0];
+    token = signToken(user);
   });
 
-  afterAll(() => {
-    // cleanup records and user
-    db.prepare('DELETE FROM checkin_records WHERE user_id = ?').run(userId);
-    db.prepare('DELETE FROM users WHERE id = ?').run(userId);
-    db.prepare('DELETE FROM checkin_codes WHERE code LIKE ?').run(`${codeValue}%`);
-  });
+  it('checks in with a valid code and checks out', async () => {
+    const code = insertCode(5 * 60 * 1000);
 
-  it('can check in with a valid code and then check out', async () => {
-    const app = makeApp();
-
-    // check in
     const resIn = await request(app)
       .post('/api/checkin/in')
       .set('Authorization', `Bearer ${token}`)
-      .send({ code: codeValue });
-
+      .send({ code });
     expect(resIn.status).toBe(200);
-    expect(resIn.body).toHaveProperty('message');
     expect(resIn.body.message).toMatch(/签到成功/);
-    expect(resIn.body).toHaveProperty('record');
+    expect(resIn.body.record.status).toBe('checked_in');
 
-    // check out
     const resOut = await request(app)
       .post('/api/checkin/out')
       .set('Authorization', `Bearer ${token}`)
       .send({});
-
     expect(resOut.status).toBe(200);
-    expect(resOut.body).toHaveProperty('message');
     expect(resOut.body.message).toMatch(/签退成功/);
-    expect(resOut.body).toHaveProperty('record');
+    expect(resOut.body.record.status).toBe('completed');
+    expect(resOut.body.record.duration_minutes).toBeGreaterThanOrEqual(0);
+  });
+
+  it('rejects invalid and expired codes', async () => {
+    const expired = insertCode(-60 * 1000);
+    const missing = await request(app)
+      .post('/api/checkin/in')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ code: crypto.randomBytes(3).toString('hex').toUpperCase() });
+    expect(missing.status).toBe(400);
+
+    const expiredRes = await request(app)
+      .post('/api/checkin/in')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ code: expired });
+    expect(expiredRes.status).toBe(400);
+
+    const empty = await request(app)
+      .post('/api/checkin/in')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ code: '  ' });
+    expect(empty.status).toBe(400);
+  });
+
+  it('blocks a second check-in while one is active', async () => {
+    const first = insertCode(5 * 60 * 1000);
+    const second = insertCode(5 * 60 * 1000);
+
+    expect(
+      (await request(app).post('/api/checkin/in').set('Authorization', `Bearer ${token}`).send({ code: first })).status
+    ).toBe(200);
+
+    const again = await request(app)
+      .post('/api/checkin/in')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ code: second });
+    expect(again.status).toBe(400);
+    expect(again.body.message).toMatch(/已处于签到状态/);
+
+    await request(app).post('/api/checkin/out').set('Authorization', `Bearer ${token}`).send({});
+  });
+
+  it('rejects checkout without an active session', async () => {
+    const res = await request(app)
+      .post('/api/checkin/out')
+      .set('Authorization', `Bearer ${token}`)
+      .send({});
+    expect(res.status).toBe(400);
+  });
+
+  it('requires authentication', async () => {
+    expect((await request(app).post('/api/checkin/in').send({})).status).toBe(401);
+    expect((await request(app).post('/api/checkin/out').send({})).status).toBe(401);
   });
 });

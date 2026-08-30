@@ -4,15 +4,19 @@
   "description": "实验室签到系统后端",
   "type": "module",
   "main": "src/index.js",
+  "engines": {
+    "node": ">=22.5.0"
+  },
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "test": "vitest --environment node"
+    "test": "vitest run"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "express": "^4.21.2",
+    "express-rate-limit": "^7.4.1",
     "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {

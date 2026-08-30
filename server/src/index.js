@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import './db/database.js';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
@@ -11,11 +12,44 @@ import statsRoutes from './routes/stats.js';
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
+// 反向代理部署时设置 TRUST_PROXY=true（或写跳数），限流按真实客户端 IP 计数
+if (process.env.TRUST_PROXY) {
+  app.set('trust proxy', process.env.TRUST_PROXY === 'true' ? 1 : process.env.TRUST_PROXY);
+}
+
+// 敏感接口限流：防暴力破解密码、找回码与签到码
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: '尝试次数过多，请 15 分钟后再试' }
+});
+const resetLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: '尝试次数过多，请 15 分钟后再试' }
+});
+const checkinLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: '操作过于频繁，请稍后再试' }
+});
+
 const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim()).filter(Boolean)
   : true;
 app.use(cors({ origin: allowedOrigins }));
 app.use(express.json({ limit: '32kb' }));
+
+// 限流挂载在 cors/json 之后，避免预检请求被计数或拦截
+app.use('/api/auth/login', loginLimiter);
+app.use('/api/auth/password/reset', resetLimiter);
+app.use('/api/checkin/in', checkinLimiter);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'lab-checkin', timestamp: new Date().toISOString() });

@@ -11,7 +11,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.join(__dirname, '..', '..', 'data');
 fs.mkdirSync(dataDir, { recursive: true });
 
-const db = new DatabaseSync(path.join(dataDir, 'lab-checkin.db'));
+const db = new DatabaseSync(process.env.DB_PATH || path.join(dataDir, 'lab-checkin.db'));
 
 db.exec(`
   PRAGMA journal_mode = WAL;
@@ -57,6 +57,23 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_reset_tokens_hash ON password_reset_tokens(token_hash);
 `);
 
+// 外键约束需每个连接单独开启
+db.prepare('PRAGMA foreign_keys = ON').run();
+
+// 同一用户同时只允许一条进行中的签到记录（并发签到在数据库层兜底）；
+// 若历史数据已存在重复进行中记录，先收敛为已结束再建唯一索引
+try {
+  db.prepare("CREATE UNIQUE INDEX IF NOT EXISTS idx_records_user_active ON checkin_records(user_id) WHERE status = 'checked_in'").run();
+} catch {
+  db.prepare(
+    "UPDATE checkin_records SET status = 'completed', checkout_time = checkin_time, duration_minutes = 0 WHERE status = 'checked_in' AND id NOT IN (SELECT MAX(id) FROM checkin_records WHERE status = 'checked_in' GROUP BY user_id)"
+  ).run();
+  db.prepare("CREATE UNIQUE INDEX IF NOT EXISTS idx_records_user_active ON checkin_records(user_id) WHERE status = 'checked_in'").run();
+}
+db.prepare('CREATE INDEX IF NOT EXISTS idx_reset_tokens_user ON password_reset_tokens(user_id)').run();
+db.prepare('CREATE INDEX IF NOT EXISTS idx_codes_expires ON checkin_codes(expires_at)').run();
+db.prepare('CREATE INDEX IF NOT EXISTS idx_records_code ON checkin_records(code_id)').run();
+
 /** 本地时间字符串 YYYY-MM-DD HH:mm:ss */
 export function nowStr() {
   return fmtDate(new Date());
@@ -65,6 +82,19 @@ export function nowStr() {
 export function fmtDate(d) {
   const p = (n) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
+/** 在事务中执行 fn；fn 抛错时回滚并原样抛出 */
+export function withTransaction(fn) {
+  db.prepare('BEGIN IMMEDIATE').run();
+  try {
+    const result = fn();
+    db.prepare('COMMIT').run();
+    return result;
+  } catch (err) {
+    db.prepare('ROLLBACK').run();
+    throw err;
+  }
 }
 
 /** 首次启动时创建默认管理员（可通过环境变量控制） */

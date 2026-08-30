@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import crypto from 'node:crypto';
-import bcrypt from 'bcryptjs';
-import db, { nowStr } from '../db/database.js';
+import db, { nowStr, fmtDate, withTransaction } from '../db/database.js';
+import { hashPassword, likePattern, parsePagination, isUniqueConstraintError } from '../utils/helpers.js';
 import { authenticate, requireAdmin } from '../middleware/auth.js';
 
 const router = Router();
@@ -9,17 +9,16 @@ router.use(authenticate, requireAdmin);
 
 /** 用户列表（分页 + 关键字搜索用户名/姓名） */
 router.get('/', (req, res) => {
-  const page = Math.max(parseInt(req.query.page) || 1, 1);
-  const pageSize = Math.min(Math.max(parseInt(req.query.pageSize) || 10, 1), 100);
-  const kw = `%${String(req.query.keyword || '').trim()}%`;
+  const { page, pageSize } = parsePagination(req.query);
+  const kw = likePattern(req.query.keyword);
 
   const total = db
-    .prepare('SELECT COUNT(*) AS c FROM users WHERE username LIKE ? OR name LIKE ?')
-    .get(kw, kw).c;
+    .prepare("SELECT COUNT(*) AS c FROM users WHERE username LIKE ? ESCAPE '\\' OR name LIKE ? ESCAPE '\\'")
+    .all(kw, kw)[0].c;
   const list = db
     .prepare(
       `SELECT id, username, name, role, created_at FROM users
-       WHERE username LIKE ? OR name LIKE ?
+       WHERE username LIKE ? ESCAPE '\\' OR name LIKE ? ESCAPE '\\'
        ORDER BY id DESC LIMIT ? OFFSET ?`
     )
     .all(kw, kw, pageSize, (page - 1) * pageSize);
@@ -42,39 +41,46 @@ router.post('/', (req, res) => {
   if (!['student', 'admin'].includes(role)) {
     return res.status(400).json({ message: '角色无效' });
   }
-  const exists = db.prepare('SELECT id FROM users WHERE username = ?').get(String(username));
-  if (exists) return res.status(400).json({ message: '用户名已存在' });
-
-  const result = db
-    .prepare('INSERT INTO users (username, password_hash, name, role, created_at) VALUES (?, ?, ?, ?, ?)')
-    .run(String(username), bcrypt.hashSync(String(password), 10), String(name).trim(), role, nowStr());
-  res.json({ id: Number(result.lastInsertRowid) });
+  try {
+    const result = db
+      .prepare('INSERT INTO users (username, password_hash, name, role, created_at) VALUES (?, ?, ?, ?, ?)')
+      .run(String(username), hashPassword(password), String(name).trim(), role, nowStr());
+    res.json({ id: Number(result.lastInsertRowid) });
+  } catch (err) {
+    // 并发创建撞用户名唯一约束时返回业务错误而非 500
+    if (isUniqueConstraintError(err)) {
+      return res.status(400).json({ message: '用户名已存在' });
+    }
+    throw err;
+  }
 });
 
 /** 生成一次性密码找回码（管理员交给用户使用） */
 router.post('/:id/password-reset-token', (req, res) => {
   const id = Number(req.params.id);
-  const user = db.prepare('SELECT id FROM users WHERE id = ?').get(id);
+  const user = db.prepare('SELECT id FROM users WHERE id = ?').all(id)[0];
   if (!user) return res.status(404).json({ message: '用户不存在' });
 
-  const code = crypto.randomBytes(4).toString('hex').toUpperCase();
+  const code = crypto.randomBytes(6).toString('hex').toUpperCase();
   const tokenHash = crypto.createHash('sha256').update(code).digest('hex');
-  const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
-  const expiresAtStr = `${expiresAt.getFullYear()}-${String(expiresAt.getMonth() + 1).padStart(2, '0')}-${String(expiresAt.getDate()).padStart(2, '0')} ${String(expiresAt.getHours()).padStart(2, '0')}:${String(expiresAt.getMinutes()).padStart(2, '0')}:${String(expiresAt.getSeconds()).padStart(2, '0')}`;
-  db.prepare('UPDATE password_reset_tokens SET used_at = ? WHERE user_id = ? AND used_at IS NULL').run(nowStr(), id);
-  db.prepare('INSERT INTO password_reset_tokens (user_id, token_hash, expires_at, created_at) VALUES (?, ?, ?, ?)').run(
-    id,
-    tokenHash,
-    expiresAtStr,
-    nowStr()
-  );
+  const expiresAtStr = fmtDate(new Date(Date.now() + 15 * 60 * 1000));
+  // 作废旧码与发放新码必须同时生效
+  withTransaction(() => {
+    db.prepare('UPDATE password_reset_tokens SET used_at = ? WHERE user_id = ? AND used_at IS NULL').run(nowStr(), id);
+    db.prepare('INSERT INTO password_reset_tokens (user_id, token_hash, expires_at, created_at) VALUES (?, ?, ?, ?)').run(
+      id,
+      tokenHash,
+      expiresAtStr,
+      nowStr()
+    );
+  });
   res.json({ code, expiresAt: expiresAtStr });
 });
 
 /** 编辑用户（姓名/角色，可顺带重置密码） */
 router.put('/:id', (req, res) => {
   const id = Number(req.params.id);
-  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').all(id)[0];
   if (!user) return res.status(404).json({ message: '用户不存在' });
 
   const name = String(req.body?.name ?? user.name).trim() || user.name;
@@ -95,7 +101,7 @@ router.put('/:id', (req, res) => {
       return res.status(400).json({ message: '密码至少 6 位' });
     }
     sql += ', password_hash = ?';
-    params.push(bcrypt.hashSync(String(req.body.password), 10));
+    params.push(hashPassword(req.body.password));
   }
   sql += ' WHERE id = ?';
   params.push(id);
@@ -109,11 +115,13 @@ router.delete('/:id', (req, res) => {
   if (id === req.user.id) {
     return res.status(400).json({ message: '不能删除当前登录账号' });
   }
-  const user = db.prepare('SELECT id FROM users WHERE id = ?').get(id);
+  const user = db.prepare('SELECT id FROM users WHERE id = ?').all(id)[0];
   if (!user) return res.status(404).json({ message: '用户不存在' });
-  db.prepare('DELETE FROM password_reset_tokens WHERE user_id = ?').run(id);
-  db.prepare('DELETE FROM checkin_records WHERE user_id = ?').run(id);
-  db.prepare('DELETE FROM users WHERE id = ?').run(id);
+  withTransaction(() => {
+    db.prepare('DELETE FROM password_reset_tokens WHERE user_id = ?').run(id);
+    db.prepare('DELETE FROM checkin_records WHERE user_id = ?').run(id);
+    db.prepare('DELETE FROM users WHERE id = ?').run(id);
+  });
   res.json({ message: '删除成功' });
 });
 

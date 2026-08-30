@@ -36,7 +36,7 @@ router.get('/daily', (req, res) => {
        FROM checkin_records WHERE substr(checkin_time, 1, 10) >= ?
        GROUP BY d`
     )
-    .all(dateOffsetStr(-days + 1));
+    .all(dateOffsetStr(-days + 1).slice(0, 10));
   const map = Object.fromEntries(rows.map((r) => [r.d, r.c]));
   const list = [];
   for (let i = days - 1; i >= 0; i--) {
@@ -51,7 +51,7 @@ router.get('/ranking', (req, res) => {
   const list = db
     .prepare(
       `SELECT u.name, u.username,
-              SUM(r.duration_minutes) AS minutes,
+              COALESCE(SUM(r.duration_minutes), 0) AS minutes,
               COUNT(r.id) AS sessions
        FROM checkin_records r JOIN users u ON u.id = r.user_id
        GROUP BY r.user_id ORDER BY minutes DESC LIMIT 10`

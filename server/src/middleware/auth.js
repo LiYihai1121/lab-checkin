@@ -1,5 +1,9 @@
 import jwt from 'jsonwebtoken';
 
+// 生产环境必须显式配置 JWT_SECRET，防止使用公开默认值签发可伪造的 token
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  throw new Error('生产环境必须设置 JWT_SECRET 环境变量');
+}
 const JWT_SECRET = process.env.JWT_SECRET || 'lab-checkin-dev-secret-change-in-production';
 const TOKEN_TTL = '24h';
 

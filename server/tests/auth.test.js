@@ -1,0 +1,120 @@
+import { describe, it, expect, beforeAll } from 'vitest';
+import crypto from 'node:crypto';
+import request from 'supertest';
+import db, { fmtDate } from '../src/db/database.js';
+import { makeApp } from './helpers.js';
+
+const app = makeApp();
+
+// 测试口令全部随机生成，避免在源码中出现硬编码凭据
+const INIT_ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const CHANGED_ADMIN_PASSWORD = crypto.randomBytes(8).toString('hex');
+const STU_PASSWORD = crypto.randomBytes(8).toString('hex');
+const STU_RESET_PASSWORD = crypto.randomBytes(8).toString('hex');
+
+describe('auth', () => {
+  let adminToken;
+
+  beforeAll(async () => {
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ username: 'admin', password: INIT_ADMIN_PASSWORD });
+    expect(res.status).toBe(200);
+    adminToken = res.body.token;
+  });
+
+  it('rejects bad credentials and missing fields', async () => {
+    const bad = await request(app)
+      .post('/api/auth/login')
+      .send({ username: 'admin', password: crypto.randomBytes(8).toString('hex') });
+    expect(bad.status).toBe(401);
+    const missing = await request(app).post('/api/auth/login').send({});
+    expect(missing.status).toBe(400);
+  });
+
+  it('returns current user via /me and requires bearer token', async () => {
+    const res = await request(app).get('/api/auth/me').set('Authorization', `Bearer ${adminToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body.user.username).toBe('admin');
+    expect(res.body.user).not.toHaveProperty('password_hash');
+    expect((await request(app).get('/api/auth/me')).status).toBe(401);
+  });
+
+  it('changes own password, re-login works, validates input', async () => {
+    const wrongOld = await request(app)
+      .put('/api/auth/password')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ oldPassword: crypto.randomBytes(8).toString('hex'), newPassword: crypto.randomBytes(8).toString('hex') });
+    expect(wrongOld.status).toBe(400);
+
+    const shortNew = await request(app)
+      .put('/api/auth/password')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ oldPassword: INIT_ADMIN_PASSWORD, newPassword: '123' });
+    expect(shortNew.status).toBe(400);
+
+    const change = await request(app)
+      .put('/api/auth/password')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ oldPassword: INIT_ADMIN_PASSWORD, newPassword: CHANGED_ADMIN_PASSWORD });
+    expect(change.status).toBe(200);
+
+    const relogin = await request(app)
+      .post('/api/auth/login')
+      .send({ username: 'admin', password: CHANGED_ADMIN_PASSWORD });
+    expect(relogin.status).toBe(200);
+    adminToken = relogin.body.token;
+
+    // 改回初始密码，避免影响后续用例
+    await request(app)
+      .put('/api/auth/password')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ oldPassword: CHANGED_ADMIN_PASSWORD, newPassword: INIT_ADMIN_PASSWORD });
+  });
+
+  it('resets password with one-time code and blocks reuse', async () => {
+    const created = await request(app)
+      .post('/api/users')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ username: 'stu_reset', password: STU_PASSWORD, name: '重置同学', role: 'student' });
+    expect(created.status).toBe(200);
+
+    const issued = await request(app)
+      .post(`/api/users/${created.body.id}/password-reset-token`)
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(issued.status).toBe(200);
+    expect(issued.body.code).toMatch(/^[0-9A-F]{12}$/);
+
+    const reset = await request(app)
+      .post('/api/auth/password/reset')
+      .send({ username: 'stu_reset', resetCode: issued.body.code, newPassword: STU_RESET_PASSWORD });
+    expect(reset.status).toBe(200);
+
+    const relogin = await request(app)
+      .post('/api/auth/login')
+      .send({ username: 'stu_reset', password: STU_RESET_PASSWORD });
+    expect(relogin.status).toBe(200);
+
+    const reuse = await request(app)
+      .post('/api/auth/password/reset')
+      .send({ username: 'stu_reset', resetCode: issued.body.code, newPassword: crypto.randomBytes(8).toString('hex') });
+    expect(reuse.status).toBe(400);
+  });
+
+  it('rejects expired reset code', async () => {
+    const user = db.prepare("SELECT id FROM users WHERE username = 'stu_reset'").all()[0];
+    const code = crypto.randomBytes(6).toString('hex').toUpperCase();
+    const tokenHash = crypto.createHash('sha256').update(code).digest('hex');
+    db.prepare('INSERT INTO password_reset_tokens (user_id, token_hash, expires_at, created_at) VALUES (?, ?, ?, ?)').run(
+      user.id,
+      tokenHash,
+      fmtDate(new Date(Date.now() - 60_000)),
+      fmtDate(new Date())
+    );
+
+    const res = await request(app)
+      .post('/api/auth/password/reset')
+      .send({ username: 'stu_reset', resetCode: code, newPassword: crypto.randomBytes(8).toString('hex') });
+    expect(res.status).toBe(400);
+  });
+});

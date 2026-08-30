@@ -1,5 +1,7 @@
 import { Router } from 'express';
-import db, { nowStr } from '../db/database.js';
+import crypto from 'node:crypto';
+import db, { nowStr, fmtDate } from '../db/database.js';
+import { isUniqueConstraintError } from '../utils/helpers.js';
 import { authenticate, requireAdmin } from '../middleware/auth.js';
 
 const router = Router();
@@ -15,29 +17,34 @@ router.post('/generate', authenticate, requireAdmin, (req, res) => {
   // 清理已过期的旧验证码
   db.prepare('DELETE FROM checkin_codes WHERE expires_at <= ?').run(nowStr());
 
-  let code;
-  do {
-    code = randomCode();
-  } while (db.prepare('SELECT id FROM checkin_codes WHERE code = ? AND expires_at > ?').get(code, nowStr()));
-
   const expiresAt = addSeconds(new Date(), CODE_TTL_SECONDS);
-  const fmt = (d) => {
-    const p = (n) => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
-  };
-  db.prepare('INSERT INTO checkin_codes (code, expires_at, created_at) VALUES (?, ?, ?)').run(
-    code,
-    fmt(expiresAt),
-    nowStr()
-  );
+  // 与活跃码撞唯一约束时换码重试（已先清理过期码，冲突概率极低）
+  let code = '';
+  let inserted = false;
+  for (let attempt = 0; attempt < 5 && !inserted; attempt++) {
+    code = randomCode();
+    try {
+      db.prepare('INSERT INTO checkin_codes (code, expires_at, created_at) VALUES (?, ?, ?)').run(
+        code,
+        fmtDate(expiresAt),
+        nowStr()
+      );
+      inserted = true;
+    } catch (err) {
+      if (!isUniqueConstraintError(err)) throw err;
+    }
+  }
+  if (!inserted) {
+    return res.status(503).json({ message: '签到码生成繁忙，请稍后重试' });
+  }
   res.json({ code, expiresAt: expiresAt.getTime(), expiresIn: CODE_TTL_SECONDS });
 });
 
 function randomCode() {
-  // 去除易混淆字符 0/O、1/I
+  // 去除易混淆字符 0/O、1/I；crypto.randomInt 为密码学安全随机
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let s = '';
-  for (let i = 0; i < 6; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  for (let i = 0; i < 6; i++) s += chars[crypto.randomInt(chars.length)];
   return s;
 }
 
