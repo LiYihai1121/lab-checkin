@@ -6,10 +6,12 @@
             "request": "launch",
             "name": "后端：调试 Express API（node --watch）",
             "cwd": "${workspaceFolder}/server",
-            "runtimeArgs": ["--watch"],
-            "program": "${workspaceFolder}/server/src/index.js",
+            "runtimeExecutable": "node",
+            "runtimeArgs": [
+                "--watch",
+                "${workspaceFolder}/server/src/index.js"
+            ],
             "skipFiles": ["<node_internal>/**"],
-            "restart": true,
             "console": "integratedTerminal"
         },
         {
@@ -18,7 +20,12 @@
             "name": "前端：Vite 开发服务器",
             "cwd": "${workspaceFolder}/web",
             "runtimeExecutable": "npm",
-            "runtimeArgs": ["run", "dev"],
+            "runtimeArgs": [
+                "run",
+                "--prefix",
+                "${workspaceFolder}/web",
+                "dev"
+            ],
             "console": "integratedTerminal"
         },
         {
