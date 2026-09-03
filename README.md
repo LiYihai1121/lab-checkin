@@ -2,17 +2,21 @@
 
 项目架构说明见 [ARCHITECTURE.md](ARCHITECTURE.md)。
 
+版本管理遵循 [VERSIONING.md](VERSIONING.md)，发布历史见 [CHANGELOG.md](CHANGELOG.md)。
+
 基于 **Vue 3 + Element Plus + Express + SQLite** 的实验室签到签退管理系统，采用动态时效二维码防止代签。
 
 ## 功能
 
-**学生端**
+### 学生端
+
 - 账号密码登录
 - 输入动态码 / 扫描现场二维码完成签到（60 秒有效，过期自动失效）
 - 一键签退，实时显示本次已持续时长与今日累计时长
 - 个人签到记录查询（支持日期筛选）
 
-**管理端**
+### 管理端
+
 - 动态签到二维码大屏展示：倒计时、到期自动轮换，可手动刷新
 - 统计看板：在馆人数、今日签到人次、近 30 天趋势图、累计时长 Top 10、当前在馆人员列表（30 秒自动刷新）
 - 记录管理：全部签到记录查询（按用户名/姓名/日期筛选）
@@ -21,7 +25,7 @@
 ## 技术栈
 
 | 层级 | 技术 |
-|------|------|
+| --- | --- |
 | 前端 | Vue 3 · Vite · Element Plus · Pinia · Vue Router · Axios · ECharts · qrcode |
 | 后端 | Node.js (Express) · JWT · bcryptjs |
 | 数据库 | SQLite（Node.js 内置 `node:sqlite` 模块，无需安装数据库服务） |
@@ -59,7 +63,7 @@ npm run dev
 
 ## 项目结构
 
-```
+```text
 lab-checkin/
 ├── server/                  # 后端
 │   ├── data/                # SQLite 数据库文件（自动创建）
@@ -100,7 +104,7 @@ lab-checkin/
 ## API 一览
 
 | 方法 | 路径 | 权限 | 说明 |
-|------|------|------|------|
+| --- | --- | --- | --- |
 | GET | `/api/health` | 公开 | 服务健康检查 |
 | POST | `/api/auth/login` | 公开 | 登录，返回 JWT |
 | POST | `/api/auth/password/reset` | 公开 | 使用管理员找回码重置密码 |
@@ -129,7 +133,7 @@ lab-checkin/
 ## 环境变量
 
 | 变量 | 说明 |
-|------|------|
+| --- | --- |
 | `JWT_SECRET` | JWT 签名密钥，**生产环境必填**（缺失时启动失败） |
 | `PORT` | 后端端口，默认 3000 |
 | `CORS_ORIGIN` | 允许的前端来源，多个用英文逗号分隔；未设置时放行所有来源 |

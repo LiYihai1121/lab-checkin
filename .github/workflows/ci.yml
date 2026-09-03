@@ -6,6 +6,16 @@ on:
   pull_request:
 
 jobs:
+  version:
+    name: 版本一致性检查
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/check-version.mjs
+
   server:
     name: 后端（语法检查 + 测试）
     runs-on: ubuntu-latest

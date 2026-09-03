@@ -10,7 +10,8 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "test": "vitest run"
+    "test": "vitest run",
+    "version:check": "node ../scripts/check-version.mjs"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
