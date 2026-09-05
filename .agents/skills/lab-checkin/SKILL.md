@@ -1,11 +1,23 @@
 ---
 name: lab-checkin
-description: 实验室签到系统开发助手。Use whenever the user works on the lab-checkin repository, asks about the check-in/check-out system, or needs to change, debug, test, or deploy this Vue 3 + Express + SQLite project. Covers coding conventions, auth boundaries, the three environments, and verification commands. For deployment/release/rollback specifics see the lab-checkin-delivery skill.
+description: 实验室签到系统开发助手。Use whenever the user works on the lab-checkin repository, asks about the check-in/check-out system, or needs to change, debug, test, or deploy this Vue 3 + Express + SQLite project. This is the overview skill with global conventions — module-level work should also load the matching skill (backend / frontend / testing / security / delivery).
 ---
 
 # lab-checkin 项目开发指南
 
 Vue 3 + Vite 前端与 Express + SQLite 后端组成的 TypeScript 实验室签到签退管理系统。前后端是两个独立 Node.js 包（全部 `.ts` 与 `lang="ts"` SFC，strict 模式），无根级 `package.json`。
+
+## 0. 模块 skill 导航（按改动区域选用）
+
+本仓库的 skill 按模块拆分（大厂团队惯例：模块化 skill 随 git 共享），本文件是总览与全局约定，具体改动请加载对应模块 skill：
+
+| 模块 | Skill | 触发场景 |
+|------|-------|----------|
+| 后端 API / 数据库 | `lab-checkin-backend` | 路由、中间件、SQL、建表、后端报错与钩子误报 |
+| 前端页面 | `lab-checkin-frontend` | Vue 组件、路由、store、请求层、构建与环境标识 |
+| 测试 | `lab-checkin-testing` | 写/跑/修测试，TDD 流程，测试失败排查 |
+| 安全 | `lab-checkin-security` | 认证、密钥、找回码、限流、发布前安全自查 |
+| 交付部署 | `lab-checkin-delivery` | 部署、发布、回滚、Docker/Compose、CI、版本 |
 
 ## 1. 项目结构速查
 
