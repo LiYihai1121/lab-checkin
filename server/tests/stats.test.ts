@@ -43,12 +43,12 @@ describe('stats', () => {
     const days = 3;
     const oldestDay = fmtDate(new Date(Date.now() - (days - 1) * 86400000)).slice(0, 10);
     db.prepare(
-      "INSERT INTO checkin_records (user_id, checkin_time, checkout_time, duration_minutes, status) VALUES (?, ?, ?, ?, 'completed')"
+      "INSERT INTO checkin_records (user_id, checkin_time, checkout_time, duration_minutes, status) VALUES (?, ?, ?, ?, 'completed')",
     ).run(stuId, `${oldestDay} 10:00:00`, `${oldestDay} 11:30:00`, 90);
     // 一条进行中的记录（时长尚未结算）
     db.prepare("INSERT INTO checkin_records (user_id, checkin_time, status) VALUES (?, ?, 'checked_in')").run(
       stu2Id,
-      nowStr()
+      nowStr(),
     );
   });
 
@@ -60,9 +60,7 @@ describe('stats', () => {
   });
 
   it('daily includes the oldest day in the window', async () => {
-    const res = await request(app)
-      .get('/api/stats/daily?days=3')
-      .set('Authorization', `Bearer ${adminToken}`);
+    const res = await request(app).get('/api/stats/daily?days=3').set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
     expect(res.body).toHaveLength(3);
     // 最老一天的记录必须被统计到（修复前边界比较错误导致恒为 0）
@@ -70,9 +68,7 @@ describe('stats', () => {
   });
 
   it('overview counts in-lab users and today check-ins', async () => {
-    const res = await request(app)
-      .get('/api/stats/overview')
-      .set('Authorization', `Bearer ${adminToken}`);
+    const res = await request(app).get('/api/stats/overview').set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
     expect(res.body.inLab).toBe(1);
     expect(res.body.todayCount).toBe(1);
@@ -82,9 +78,7 @@ describe('stats', () => {
   });
 
   it('ranking returns 0 (not null) for unfinished sessions', async () => {
-    const res = await request(app)
-      .get('/api/stats/ranking')
-      .set('Authorization', `Bearer ${adminToken}`);
+    const res = await request(app).get('/api/stats/ranking').set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
     const unfinished = res.body.find((r: { username: string }) => r.username === 'stu_active');
     const finished = res.body.find((r: { username: string }) => r.username === 'stu_stats');

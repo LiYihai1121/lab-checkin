@@ -40,10 +40,10 @@ describe('records', () => {
     const today = fmtDate(new Date()).slice(0, 10);
     const old = fmtDate(new Date(Date.now() - 40 * 86400000)).slice(0, 10);
     db.prepare(
-      "INSERT INTO checkin_records (user_id, checkin_time, checkout_time, duration_minutes, status) VALUES (?, ?, ?, ?, 'completed')"
+      "INSERT INTO checkin_records (user_id, checkin_time, checkout_time, duration_minutes, status) VALUES (?, ?, ?, ?, 'completed')",
     ).run(stuId, `${today} 09:00:00`, `${today} 10:00:00`, 60);
     db.prepare(
-      "INSERT INTO checkin_records (user_id, checkin_time, checkout_time, duration_minutes, status) VALUES (?, ?, ?, ?, 'completed')"
+      "INSERT INTO checkin_records (user_id, checkin_time, checkout_time, duration_minutes, status) VALUES (?, ?, ?, ?, 'completed')",
     ).run(stuId, `${old} 09:00:00`, `${old} 10:00:00`, 60);
   });
 
@@ -52,9 +52,7 @@ describe('records', () => {
   });
 
   it('forbids students from /all', async () => {
-    const res = await request(app)
-      .get('/api/records/all')
-      .set('Authorization', `Bearer ${studentToken}`);
+    const res = await request(app).get('/api/records/all').set('Authorization', `Bearer ${studentToken}`);
     expect(res.status).toBe(403);
   });
 
@@ -89,16 +87,12 @@ describe('records', () => {
   });
 
   it('searches all records by keyword with escaped wildcards', async () => {
-    const hit = await request(app)
-      .get('/api/records/all?keyword=stu_rec')
-      .set('Authorization', `Bearer ${adminToken}`);
+    const hit = await request(app).get('/api/records/all?keyword=stu_rec').set('Authorization', `Bearer ${adminToken}`);
     expect(hit.status).toBe(200);
     expect(hit.body.total).toBe(2);
 
     // % 应作为字面字符处理，而不是匹配全部
-    const literal = await request(app)
-      .get('/api/records/all?keyword=%25')
-      .set('Authorization', `Bearer ${adminToken}`);
+    const literal = await request(app).get('/api/records/all?keyword=%25').set('Authorization', `Bearer ${adminToken}`);
     expect(literal.status).toBe(200);
     expect(literal.body.total).toBe(0);
   });

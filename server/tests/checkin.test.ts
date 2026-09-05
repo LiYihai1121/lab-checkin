@@ -22,7 +22,7 @@ function insertCode(ttlMs: number): string {
   db.prepare('INSERT INTO checkin_codes (code, expires_at, created_at) VALUES (?, ?, ?)').run(
     code,
     fmtDate(new Date(Date.now() + ttlMs)),
-    nowStr()
+    nowStr(),
   );
   return code;
 }
@@ -40,18 +40,12 @@ describe('checkin routes', () => {
   it('checks in with a valid code and checks out', async () => {
     const code = insertCode(5 * 60 * 1000);
 
-    const resIn = await request(app)
-      .post('/api/checkin/in')
-      .set('Authorization', `Bearer ${token}`)
-      .send({ code });
+    const resIn = await request(app).post('/api/checkin/in').set('Authorization', `Bearer ${token}`).send({ code });
     expect(resIn.status).toBe(200);
     expect(resIn.body.message).toMatch(/签到成功/);
     expect(resIn.body.record.status).toBe('checked_in');
 
-    const resOut = await request(app)
-      .post('/api/checkin/out')
-      .set('Authorization', `Bearer ${token}`)
-      .send({});
+    const resOut = await request(app).post('/api/checkin/out').set('Authorization', `Bearer ${token}`).send({});
     expect(resOut.status).toBe(200);
     expect(resOut.body.message).toMatch(/签退成功/);
     expect(resOut.body.record.status).toBe('completed');
@@ -84,7 +78,7 @@ describe('checkin routes', () => {
     const second = insertCode(5 * 60 * 1000);
 
     expect(
-      (await request(app).post('/api/checkin/in').set('Authorization', `Bearer ${token}`).send({ code: first })).status
+      (await request(app).post('/api/checkin/in').set('Authorization', `Bearer ${token}`).send({ code: first })).status,
     ).toBe(200);
 
     const again = await request(app)
@@ -98,10 +92,7 @@ describe('checkin routes', () => {
   });
 
   it('rejects checkout without an active session', async () => {
-    const res = await request(app)
-      .post('/api/checkin/out')
-      .set('Authorization', `Bearer ${token}`)
-      .send({});
+    const res = await request(app).post('/api/checkin/out').set('Authorization', `Bearer ${token}`).send({});
     expect(res.status).toBe(400);
   });
 

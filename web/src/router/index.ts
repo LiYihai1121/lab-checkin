@@ -24,26 +24,26 @@ const routes = [
       {
         path: 'admin/dashboard',
         component: () => import('../views/admin/Dashboard.vue'),
-        meta: { title: '统计看板', adminOnly: true }
+        meta: { title: '统计看板', adminOnly: true },
       },
       {
         path: 'admin/qrcode',
         component: () => import('../views/admin/QrCodeView.vue'),
-        meta: { title: '签到二维码', adminOnly: true }
+        meta: { title: '签到二维码', adminOnly: true },
       },
       {
         path: 'admin/records',
         component: () => import('../views/admin/RecordsAdmin.vue'),
-        meta: { title: '记录管理', adminOnly: true }
+        meta: { title: '记录管理', adminOnly: true },
       },
       {
         path: 'admin/users',
         component: () => import('../views/admin/UsersAdmin.vue'),
-        meta: { title: '用户管理', adminOnly: true }
+        meta: { title: '用户管理', adminOnly: true },
       },
-      { path: ':pathMatch(.*)*', component: () => import('../views/NotFound.vue'), meta: { title: '页面不存在' } }
-    ]
-  }
+      { path: ':pathMatch(.*)*', component: () => import('../views/NotFound.vue'), meta: { title: '页面不存在' } },
+    ],
+  },
 ];
 
 const router = createRouter({ history: createWebHistory(), routes });

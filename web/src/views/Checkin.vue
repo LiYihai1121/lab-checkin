@@ -6,7 +6,9 @@
         <h1>签到签退</h1>
         <p>每次进入实验室前完成签到，离开时记得签退。</p>
       </div>
-      <div class="date-chip">{{ new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'short' }) }}</div>
+      <div class="date-chip">
+        {{ new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'short' }) }}
+      </div>
     </div>
     <el-row :gutter="18">
       <!-- 状态卡片 -->
@@ -38,16 +40,23 @@
 
           <template v-else-if="statusLoaded">
             <el-empty description="当前未签到" :image-size="80" />
-            <el-input v-model="code" size="large" maxlength="6" placeholder="输入 6 位动态签到码（或扫描现场二维码）"
-              class="code-input" @input="code = code.toUpperCase()" @keyup.enter="onCheckin">
-              <template #prepend><el-icon><Key /></el-icon></template>
+            <el-input
+              v-model="code"
+              size="large"
+              maxlength="6"
+              placeholder="输入 6 位动态签到码（或扫描现场二维码）"
+              class="code-input"
+              @input="code = code.toUpperCase()"
+              @keyup.enter="onCheckin"
+            >
+              <template #prepend
+                ><el-icon><Key /></el-icon
+              ></template>
             </el-input>
             <el-button type="primary" size="large" class="big-btn" :loading="loading" @click="onCheckin">
               签 到
             </el-button>
-            <el-button class="scan-btn" size="large" :icon="Camera" @click="openScanner">
-              扫码签到
-            </el-button>
+            <el-button class="scan-btn" size="large" :icon="Camera" @click="openScanner"> 扫码签到 </el-button>
             <div class="hint">请向管理员获取屏幕上的动态二维码，扫码后自动填入；签到码 60 秒内有效。</div>
           </template>
         </el-card>
@@ -61,9 +70,17 @@
         </el-card>
       </el-col>
     </el-row>
-    <div class="flow-note"><span>01</span> 获取现场动态码 <i>→</i> <span>02</span> 完成签到 <i>→</i> <span>03</span> 离开时签退</div>
+    <div class="flow-note">
+      <span>01</span> 获取现场动态码 <i>→</i> <span>02</span> 完成签到 <i>→</i> <span>03</span> 离开时签退
+    </div>
 
-    <el-dialog v-model="scannerVisible" title="扫描签到二维码" width="420px" @opened="startScanner" @closed="stopScanner">
+    <el-dialog
+      v-model="scannerVisible"
+      title="扫描签到二维码"
+      width="420px"
+      @opened="startScanner"
+      @closed="stopScanner"
+    >
       <div id="checkin-qr-reader" class="scanner"></div>
       <el-alert v-if="scanError" class="scan-error" type="warning" :closable="false" :title="scanError" />
       <p class="scan-hint">请将管理员屏幕上的二维码放入取景框内。</p>
@@ -107,7 +124,10 @@ let timer: ReturnType<typeof setInterval> | undefined;
 
 const elapsedText = computed(() => {
   if (!status.active) return '00:00:00';
-  const sec = Math.max(0, Math.floor((nowTick.value - new Date(status.active.checkin_time.replace(' ', 'T')).getTime()) / 1000));
+  const sec = Math.max(
+    0,
+    Math.floor((nowTick.value - new Date(status.active.checkin_time.replace(' ', 'T')).getTime()) / 1000),
+  );
   const h = String(Math.floor(sec / 3600)).padStart(2, '0');
   const m = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
   const s = String(sec % 60).padStart(2, '0');
@@ -170,7 +190,7 @@ async function startScanner() {
       { facingMode: 'environment' },
       { fps: 10, qrbox: { width: 240, height: 240 } },
       handleDecoded,
-      () => {}
+      () => {},
     );
   } catch {
     scanError.value = '无法访问摄像头，请检查浏览器权限，或改用下方手动输入。';
@@ -296,7 +316,7 @@ onUnmounted(() => {
   margin: 22px 4px 0;
   color: #8b9690;
   font-size: 12px;
-  letter-spacing: .3px;
+  letter-spacing: 0.3px;
 }
 .flow-note span {
   color: #e7795b;
@@ -322,7 +342,9 @@ onUnmounted(() => {
   animation: pulse 1.5s infinite;
 }
 @keyframes pulse {
-  50% { opacity: 0.4; }
+  50% {
+    opacity: 0.4;
+  }
 }
 .active-text {
   font-size: 26px;

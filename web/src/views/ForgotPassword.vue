@@ -8,9 +8,18 @@
       <p class="lead">你的账号由实验室管理员统一管理。</p>
 
       <div class="steps">
-        <div class="step active"><span>01</span><div><b>联系管理员</b><small>说明需要恢复的账号</small></div></div>
-        <div class="step"><span>02</span><div><b>重置密码</b><small>管理员在用户管理中操作</small></div></div>
-        <div class="step"><span>03</span><div><b>重新登录</b><small>使用新密码进入系统</small></div></div>
+        <div class="step active">
+          <span>01</span>
+          <div><b>联系管理员</b><small>说明需要恢复的账号</small></div>
+        </div>
+        <div class="step">
+          <span>02</span>
+          <div><b>重置密码</b><small>管理员在用户管理中操作</small></div>
+        </div>
+        <div class="step">
+          <span>03</span>
+          <div><b>重新登录</b><small>使用新密码进入系统</small></div>
+        </div>
       </div>
 
       <el-alert
@@ -52,8 +61,8 @@ const rules: FormRules = {
   resetCode: [{ required: true, message: '请输入找回码', trigger: 'blur' }],
   newPassword: [
     { required: true, message: '请输入新密码', trigger: 'blur' },
-    { min: 6, message: '新密码至少 6 位', trigger: 'blur' }
-  ]
+    { min: 6, message: '新密码至少 6 位', trigger: 'blur' },
+  ],
 };
 
 async function onSubmit() {
@@ -149,7 +158,8 @@ h1 {
   color: #163d3d;
   background: #f4c95d;
 }
-.step b, .step small {
+.step b,
+.step small {
   display: block;
 }
 .step b {

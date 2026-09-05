@@ -29,25 +29,27 @@ const loginLimiter = rateLimit({
   limit: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { message: '尝试次数过多，请 15 分钟后再试' }
+  message: { message: '尝试次数过多，请 15 分钟后再试' },
 });
 const resetLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 5,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { message: '尝试次数过多，请 15 分钟后再试' }
+  message: { message: '尝试次数过多，请 15 分钟后再试' },
 });
 const checkinLimiter = rateLimit({
   windowMs: 60 * 1000,
   limit: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { message: '操作过于频繁，请稍后再试' }
+  message: { message: '操作过于频繁，请稍后再试' },
 });
 
 const allowedOrigins: string[] | true = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim()).filter(Boolean)
+  ? process.env.CORS_ORIGIN.split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean)
   : true;
 app.use(cors({ origin: allowedOrigins }));
 app.use(express.json({ limit: '32kb' }));
@@ -64,7 +66,7 @@ app.get('/api/health', (req, res) => {
     environment: environment.name,
     environmentLabel: environment.label,
     version: appVersion,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -98,12 +100,10 @@ app.use(errorHandler);
 
 const server = app.listen(PORT, () => {
   console.info(`实验室签到系统后端已启动: http://localhost:${PORT}`);
-  const corsDesc = Array.isArray(allowedOrigins)
-    ? allowedOrigins.join(', ')
-    : '任意来源（未设置 CORS_ORIGIN）';
+  const corsDesc = Array.isArray(allowedOrigins) ? allowedOrigins.join(', ') : '任意来源（未设置 CORS_ORIGIN）';
   const dbDesc = process.env.DB_PATH || `server/data/${environment.dbFile}`;
   console.info(
-    `[环境] ${environment.label}（NODE_ENV=${environment.name}）| 版本 v${appVersion} | 数据库=${dbDesc} | CORS=${corsDesc}`
+    `[环境] ${environment.label}（NODE_ENV=${environment.name}）| 版本 v${appVersion} | 数据库=${dbDesc} | CORS=${corsDesc}`,
   );
 });
 
@@ -111,7 +111,7 @@ const server = app.listen(PORT, () => {
 server.on('error', (err) => {
   const errno = err as NodeJS.ErrnoException;
   console.error(
-    `[启动失败] ${errno.code === 'EADDRINUSE' ? `端口 ${PORT} 已被占用，可能有旧实例尚未退出` : errno.message}`
+    `[启动失败] ${errno.code === 'EADDRINUSE' ? `端口 ${PORT} 已被占用，可能有旧实例尚未退出` : errno.message}`,
   );
   process.exit(1);
 });

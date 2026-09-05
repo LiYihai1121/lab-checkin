@@ -27,7 +27,7 @@ router.post('/generate', authenticate, requireAdmin, (req, res) => {
       db.prepare('INSERT INTO checkin_codes (code, expires_at, created_at) VALUES (?, ?, ?)').run(
         code,
         fmtDate(expiresAt),
-        nowStr()
+        nowStr(),
       );
       inserted = true;
     } catch (err) {

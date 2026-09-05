@@ -20,7 +20,7 @@ router.get('/', (req, res) => {
     .prepare(
       `SELECT id, username, name, role, created_at FROM users
        WHERE username LIKE ? ESCAPE '\\' OR name LIKE ? ESCAPE '\\'
-       ORDER BY id DESC LIMIT ? OFFSET ?`
+       ORDER BY id DESC LIMIT ? OFFSET ?`,
     )
     .all(kw, kw, pageSize, (page - 1) * pageSize) as UserPublicRow[];
 
@@ -68,12 +68,9 @@ router.post('/:id/password-reset-token', (req, res) => {
   // 作废旧码与发放新码必须同时生效
   withTransaction(() => {
     db.prepare('UPDATE password_reset_tokens SET used_at = ? WHERE user_id = ? AND used_at IS NULL').run(nowStr(), id);
-    db.prepare('INSERT INTO password_reset_tokens (user_id, token_hash, expires_at, created_at) VALUES (?, ?, ?, ?)').run(
-      id,
-      tokenHash,
-      expiresAtStr,
-      nowStr()
-    );
+    db.prepare(
+      'INSERT INTO password_reset_tokens (user_id, token_hash, expires_at, created_at) VALUES (?, ?, ?, ?)',
+    ).run(id, tokenHash, expiresAtStr, nowStr());
   });
   res.json({ code, expiresAt: expiresAtStr });
 });

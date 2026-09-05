@@ -13,11 +13,9 @@ const TOKEN_TTL: SignOptions['expiresIn'] = '24h';
 
 /** 签发 JWT：payload 为用户基本信息 */
 export function signToken(user: AuthUser): string {
-  return jwt.sign(
-    { id: user.id, username: user.username, name: user.name, role: user.role },
-    JWT_SECRET,
-    { expiresIn: TOKEN_TTL }
-  );
+  return jwt.sign({ id: user.id, username: user.username, name: user.name, role: user.role }, JWT_SECRET, {
+    expiresIn: TOKEN_TTL,
+  });
 }
 
 /**
@@ -37,9 +35,8 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
     res.status(401).json({ message: '登录已过期，请重新登录' });
     return;
   }
-  const user = db
-    .prepare('SELECT id, username, name, role FROM users WHERE id = ?')
-    .all(payload.id)[0] as AuthUser | undefined;
+  const user = db.prepare('SELECT id, username, name, role FROM users WHERE id = ?').all(payload.id)[0] as
+    AuthUser | undefined;
   if (!user) {
     res.status(401).json({ message: '账号不存在或已被删除' });
     return;

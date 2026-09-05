@@ -8,7 +8,9 @@ export function hashPassword(plain: unknown): string {
 
 /** 转义 LIKE 通配符，SQL 中需配合 ESCAPE '\' 使用 */
 export function escapeLike(value: unknown): string {
-  return String(value ?? '').trim().replace(/[\\%_]/g, (ch) => `\\${ch}`);
+  return String(value ?? '')
+    .trim()
+    .replace(/[\\%_]/g, (ch) => `\\${ch}`);
 }
 
 export function likePattern(keyword: unknown): string {

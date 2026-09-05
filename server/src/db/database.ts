@@ -70,7 +70,7 @@ const SCHEMA_STATEMENTS = [
   'CREATE INDEX IF NOT EXISTS idx_records_user      ON checkin_records(user_id)',
   'CREATE INDEX IF NOT EXISTS idx_records_status    ON checkin_records(status)',
   'CREATE INDEX IF NOT EXISTS idx_records_time      ON checkin_records(checkin_time)',
-  'CREATE INDEX IF NOT EXISTS idx_reset_tokens_hash ON password_reset_tokens(token_hash)'
+  'CREATE INDEX IF NOT EXISTS idx_reset_tokens_hash ON password_reset_tokens(token_hash)',
 ];
 for (const sql of SCHEMA_STATEMENTS) {
   db.prepare(sql).run();
@@ -87,7 +87,7 @@ try {
   db.prepare(UNIQUE_ACTIVE_INDEX_SQL).run();
 } catch {
   db.prepare(
-    "UPDATE checkin_records SET status = 'completed', checkout_time = checkin_time, duration_minutes = 0 WHERE status = 'checked_in' AND id NOT IN (SELECT MAX(id) FROM checkin_records WHERE status = 'checked_in' GROUP BY user_id)"
+    "UPDATE checkin_records SET status = 'completed', checkout_time = checkin_time, duration_minutes = 0 WHERE status = 'checked_in' AND id NOT IN (SELECT MAX(id) FROM checkin_records WHERE status = 'checked_in' GROUP BY user_id)",
   ).run();
   db.prepare(UNIQUE_ACTIVE_INDEX_SQL).run();
 }
@@ -127,9 +127,11 @@ if (userCount === 0 && process.env.CREATE_DEFAULT_ADMIN !== 'false') {
     bcrypt.hashSync(initPassword, 10),
     '系统管理员',
     'admin',
-    nowStr()
+    nowStr(),
   );
-  console.info('[init] 已创建默认管理员账号：admin。请尽快修改初始密码（若需要自定义，请设置 ADMIN_PASSWORD 环境变量或将 CREATE_DEFAULT_ADMIN=false 禁用默认创建）');
+  console.info(
+    '[init] 已创建默认管理员账号：admin。请尽快修改初始密码（若需要自定义，请设置 ADMIN_PASSWORD 环境变量或将 CREATE_DEFAULT_ADMIN=false 禁用默认创建）',
+  );
 } else if (userCount === 0) {
   console.warn('[init] 未创建默认管理员（CREATE_DEFAULT_ADMIN=false）。请通过管理员脚本或迁移添加管理员账号。');
 }

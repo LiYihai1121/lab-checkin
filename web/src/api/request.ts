@@ -53,7 +53,7 @@ instance.interceptors.response.use(
       ElMessage.error(msg);
     }
     return Promise.reject(err);
-  }
+  },
 );
 
 const request = instance as unknown as RequestInstance;

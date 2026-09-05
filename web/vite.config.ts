@@ -16,7 +16,7 @@ export default defineConfig(({ mode }) => {
       vue(),
       // 生成 gzip 与 brotli 压缩文件以便部署时直接上行服务加速或 CDN 使用
       viteCompression({ algorithm: 'gzip' }),
-      viteCompression({ algorithm: 'brotliCompress' })
+      viteCompression({ algorithm: 'brotliCompress' }),
     ],
     server: {
       port: devPorts[mode] ?? 5173,
@@ -24,9 +24,9 @@ export default defineConfig(({ mode }) => {
         '/api': {
           // 默认指向当前环境的本地后端，可通过 web/.env 的 VITE_API_PROXY_TARGET 覆盖
           target: env.VITE_API_PROXY_TARGET || apiTargets[mode] || 'http://localhost:3000',
-          changeOrigin: true
-        }
-      }
+          changeOrigin: true,
+        },
+      },
     },
     build: {
       outDir: outDirs[mode] ?? 'dist-dev',
@@ -38,9 +38,9 @@ export default defineConfig(({ mode }) => {
               if (id.includes('element-plus')) return 'vendor_elementplus';
               return 'vendor';
             }
-          }
-        }
-      }
-    }
+          },
+        },
+      },
+    },
   };
 });

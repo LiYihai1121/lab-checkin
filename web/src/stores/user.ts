@@ -22,11 +22,11 @@ function loadStoredUser(): StoredUser | null {
 export const useUserStore = defineStore('user', {
   state: () => ({
     token: localStorage.getItem('token') || '',
-    user: loadStoredUser()
+    user: loadStoredUser(),
   }),
   getters: {
     isLoggedIn: (s) => !!s.token,
-    isAdmin: (s) => s.user?.role === 'admin'
+    isAdmin: (s) => s.user?.role === 'admin',
   },
   actions: {
     setAuth(token: string, user: StoredUser) {
@@ -44,6 +44,6 @@ export const useUserStore = defineStore('user', {
       this.user = null;
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-    }
-  }
+    },
+  },
 });

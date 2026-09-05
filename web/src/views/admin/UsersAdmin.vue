@@ -1,8 +1,13 @@
 <template>
   <el-card>
     <div class="toolbar">
-      <el-input v-model="keyword" placeholder="搜索用户名 / 姓名" clearable style="width: 220px"
-        @keyup.enter="load(1)" />
+      <el-input
+        v-model="keyword"
+        placeholder="搜索用户名 / 姓名"
+        clearable
+        style="width: 220px"
+        @keyup.enter="load(1)"
+      />
       <el-button type="primary" :icon="Search" @click="load(1)">查询</el-button>
       <el-button type="success" :icon="Plus" @click="openAdd">新增用户</el-button>
     </div>
@@ -22,15 +27,25 @@
         <template #default="{ row }">
           <el-button size="small" @click="openEdit(row)">编辑</el-button>
           <el-button size="small" type="warning" @click="resetPwd(row)">重置密码</el-button>
-          <el-button size="small" type="info" :loading="codeLoadingId === row.id" @click="issueResetCode(row)">生成找回码</el-button>
-          <el-button size="small" type="danger" :disabled="row.id === store.user?.id"
-            @click="onDelete(row)">删除</el-button>
+          <el-button size="small" type="info" :loading="codeLoadingId === row.id" @click="issueResetCode(row)"
+            >生成找回码</el-button
+          >
+          <el-button size="small" type="danger" :disabled="row.id === store.user?.id" @click="onDelete(row)"
+            >删除</el-button
+          >
         </template>
       </el-table-column>
     </el-table>
 
-    <el-pagination class="pager" background layout="total, prev, pager, next"
-      :total="total" :page-size="pageSize" :current-page="page" @current-change="load" />
+    <el-pagination
+      class="pager"
+      background
+      layout="total, prev, pager, next"
+      :total="total"
+      :page-size="pageSize"
+      :current-page="page"
+      @current-change="load"
+    />
   </el-card>
 
   <!-- 新增/编辑弹窗 -->
@@ -93,19 +108,19 @@ const dialog = reactive({
   visible: false,
   isEdit: false,
   id: null as number | null,
-  form: { username: '', name: '', role: 'student' as 'student' | 'admin', password: '' }
+  form: { username: '', name: '', role: 'student' as 'student' | 'admin', password: '' },
 });
 const dialogRules: FormRules = {
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
-    { pattern: /^[A-Za-z0-9_]{2,20}$/, message: '用户名需为 2-20 位字母、数字或下划线', trigger: 'blur' }
+    { pattern: /^[A-Za-z0-9_]{2,20}$/, message: '用户名需为 2-20 位字母、数字或下划线', trigger: 'blur' },
   ],
   name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
   role: [{ required: true, message: '请选择角色', trigger: 'change' }],
   password: [
     { required: true, message: '请输入初始密码', trigger: 'blur' },
-    { min: 6, message: '密码至少 6 位', trigger: 'blur' }
-  ]
+    { min: 6, message: '密码至少 6 位', trigger: 'blur' },
+  ],
 };
 const pwdDialog = reactive({ visible: false, id: null as number | null, password: '' });
 
@@ -184,10 +199,10 @@ async function issueResetCode(row: UserRow) {
       h('div', null, [
         h('p', { style: 'margin:0 0 6px' }, `找回码：${data.code}`),
         h('p', { style: 'margin:0 0 6px' }, `有效期至：${data.expiresAt}`),
-        h('p', { style: 'margin:0' }, `请将找回码安全地交给 ${row.name}。`)
+        h('p', { style: 'margin:0' }, `请将找回码安全地交给 ${row.name}。`),
       ]),
       '找回码已生成',
-      { confirmButtonText: '知道了' }
+      { confirmButtonText: '知道了' },
     );
   } finally {
     codeLoadingId.value = null;
@@ -195,7 +210,9 @@ async function issueResetCode(row: UserRow) {
 }
 
 async function onDelete(row: UserRow) {
-  const ok = await ElMessageBox.confirm(`确认删除用户「${row.name}」？其签到记录将一并删除。`, '警告', { type: 'warning' })
+  const ok = await ElMessageBox.confirm(`确认删除用户「${row.name}」？其签到记录将一并删除。`, '警告', {
+    type: 'warning',
+  })
     .then(() => true)
     .catch(() => false);
   if (!ok) return;

@@ -16,15 +16,17 @@ interface QueryRecordsArgs {
 
 /** 分页查询签到记录（COUNT 与列表保持相同的 JOIN，关键字条件才能复用） */
 function queryRecords({ whereSql, params, page, pageSize }: QueryRecordsArgs) {
-  const total = (db
-    .prepare(`SELECT COUNT(*) AS c FROM checkin_records r JOIN users u ON u.id = r.user_id ${whereSql}`)
-    .all(...params)[0] as { c: number }).c;
+  const total = (
+    db
+      .prepare(`SELECT COUNT(*) AS c FROM checkin_records r JOIN users u ON u.id = r.user_id ${whereSql}`)
+      .all(...params)[0] as { c: number }
+  ).c;
   const list = db
     .prepare(
       `SELECT r.*, u.username, u.name FROM checkin_records r
        JOIN users u ON u.id = r.user_id
        ${whereSql}
-       ORDER BY r.id DESC LIMIT ? OFFSET ?`
+       ORDER BY r.id DESC LIMIT ? OFFSET ?`,
     )
     .all(...params, pageSize, (page - 1) * pageSize);
   return { list, total };

@@ -16,9 +16,7 @@ describe('auth', () => {
   let adminToken: string;
 
   beforeAll(async () => {
-    const res = await request(app)
-      .post('/api/auth/login')
-      .send({ username: 'admin', password: INIT_ADMIN_PASSWORD });
+    const res = await request(app).post('/api/auth/login').send({ username: 'admin', password: INIT_ADMIN_PASSWORD });
     expect(res.status).toBe(200);
     adminToken = res.body.token;
   });
@@ -105,12 +103,9 @@ describe('auth', () => {
     const user = db.prepare("SELECT id FROM users WHERE username = 'stu_reset'").all()[0] as { id: number };
     const code = crypto.randomBytes(6).toString('hex').toUpperCase();
     const tokenHash = crypto.createHash('sha256').update(code).digest('hex');
-    db.prepare('INSERT INTO password_reset_tokens (user_id, token_hash, expires_at, created_at) VALUES (?, ?, ?, ?)').run(
-      user.id,
-      tokenHash,
-      fmtDate(new Date(Date.now() - 60_000)),
-      fmtDate(new Date())
-    );
+    db.prepare(
+      'INSERT INTO password_reset_tokens (user_id, token_hash, expires_at, created_at) VALUES (?, ?, ?, ?)',
+    ).run(user.id, tokenHash, fmtDate(new Date(Date.now() - 60_000)), fmtDate(new Date()));
 
     const res = await request(app)
       .post('/api/auth/password/reset')
@@ -130,13 +125,9 @@ describe('auth', () => {
     const admin2Token = (
       await request(app).post('/api/auth/login').send({ username: 'stu_demote', password: admin2Pwd })
     ).body.token;
-    expect(
-      (await request(app).get('/api/users').set('Authorization', `Bearer ${admin2Token}`)).status
-    ).toBe(200);
+    expect((await request(app).get('/api/users').set('Authorization', `Bearer ${admin2Token}`)).status).toBe(200);
     await request(app).put(`/api/users/${admin2Id}`).set(auth).send({ role: 'student' });
-    expect(
-      (await request(app).get('/api/users').set('Authorization', `Bearer ${admin2Token}`)).status
-    ).toBe(403);
+    expect((await request(app).get('/api/users').set('Authorization', `Bearer ${admin2Token}`)).status).toBe(403);
 
     // 删除：被删账号的旧 token 立即失效
     const stuPwd = crypto.randomBytes(8).toString('hex');
@@ -144,15 +135,10 @@ describe('auth', () => {
       .post('/api/users')
       .set(auth)
       .send({ username: 'stu_del', password: stuPwd, name: '删除同学', role: 'student' });
-    const stuToken = (
-      await request(app).post('/api/auth/login').send({ username: 'stu_del', password: stuPwd })
-    ).body.token;
-    expect(
-      (await request(app).get('/api/auth/me').set('Authorization', `Bearer ${stuToken}`)).status
-    ).toBe(200);
+    const stuToken = (await request(app).post('/api/auth/login').send({ username: 'stu_del', password: stuPwd })).body
+      .token;
+    expect((await request(app).get('/api/auth/me').set('Authorization', `Bearer ${stuToken}`)).status).toBe(200);
     await request(app).delete(`/api/users/${stu.body.id}`).set(auth);
-    expect(
-      (await request(app).get('/api/auth/me').set('Authorization', `Bearer ${stuToken}`)).status
-    ).toBe(401);
+    expect((await request(app).get('/api/auth/me').set('Authorization', `Bearer ${stuToken}`)).status).toBe(401);
   });
 });

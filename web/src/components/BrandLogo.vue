@@ -49,16 +49,35 @@ defineProps<{ compact?: boolean }>();
   background: #f4c95d;
   box-shadow: 0 0 0 2px rgba(244, 201, 93, 0.2);
 }
-.node-one { top: 8px; left: 8px; }
-.node-two { top: 22px; left: 22px; }
-.node-three { top: 8px; right: 7px; }
+.node-one {
+  top: 8px;
+  left: 8px;
+}
+.node-two {
+  top: 22px;
+  left: 22px;
+}
+.node-three {
+  top: 8px;
+  right: 7px;
+}
 .trace {
   height: 2px;
   transform-origin: left center;
   background: #f4c95d;
 }
-.trace-one { top: 12px; left: 13px; width: 17px; transform: rotate(34deg); }
-.trace-two { top: 26px; left: 27px; width: 12px; transform: rotate(-50deg); }
+.trace-one {
+  top: 12px;
+  left: 13px;
+  width: 17px;
+  transform: rotate(34deg);
+}
+.trace-two {
+  top: 26px;
+  left: 27px;
+  width: 12px;
+  transform: rotate(-50deg);
+}
 .logo-copy {
   display: grid;
   gap: 3px;

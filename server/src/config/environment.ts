@@ -22,7 +22,7 @@ export interface EnvMeta {
 const ENVIRONMENTS: Record<EnvName, EnvMeta> = {
   development: { name: 'development', label: '开发环境', isProduction: false, port: 3000, dbFile: 'lab-checkin.db' },
   test: { name: 'test', label: '测试环境', isProduction: false, port: 3100, dbFile: 'lab-checkin-test.db' },
-  production: { name: 'production', label: '生产环境', isProduction: true, port: 3000, dbFile: 'lab-checkin.db' }
+  production: { name: 'production', label: '生产环境', isProduction: true, port: 3000, dbFile: 'lab-checkin.db' },
 };
 
 // NODE_ENV 只认 development / test / production，缺省或未识别值按开发环境兜底

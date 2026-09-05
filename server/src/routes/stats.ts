@@ -11,9 +11,9 @@ router.get('/overview', (req, res) => {
   const countInLab = db.prepare("SELECT COUNT(*) AS c FROM checkin_records WHERE status = 'checked_in'").get() as {
     c: number;
   };
-  const todayCountRow = db.prepare('SELECT COUNT(*) AS c FROM checkin_records WHERE checkin_time >= ?').get(
-    `${todayStr} 00:00:00`
-  ) as { c: number };
+  const todayCountRow = db
+    .prepare('SELECT COUNT(*) AS c FROM checkin_records WHERE checkin_time >= ?')
+    .get(`${todayStr} 00:00:00`) as { c: number };
   const totalUsersRow = db.prepare("SELECT COUNT(*) AS c FROM users WHERE role = 'student'").get() as { c: number };
   const todayMinutesRow = db
     .prepare('SELECT COALESCE(SUM(duration_minutes), 0) AS m FROM checkin_records WHERE checkin_time >= ?')
@@ -22,7 +22,7 @@ router.get('/overview', (req, res) => {
     .prepare(
       `SELECT r.id, r.checkin_time, u.name, u.username FROM checkin_records r
        JOIN users u ON u.id = r.user_id
-       WHERE r.status = 'checked_in' ORDER BY r.checkin_time`
+       WHERE r.status = 'checked_in' ORDER BY r.checkin_time`,
     )
     .all() as Array<{ id: number; checkin_time: string; name: string; username: string }>;
   res.json({
@@ -30,7 +30,7 @@ router.get('/overview', (req, res) => {
     todayCount: todayCountRow.c,
     totalUsers: totalUsersRow.c,
     todayMinutes: todayMinutesRow.m,
-    inLabList
+    inLabList,
   });
 });
 
@@ -41,7 +41,7 @@ router.get('/daily', (req, res) => {
     .prepare(
       `SELECT substr(checkin_time, 1, 10) AS d, COUNT(*) AS c
        FROM checkin_records WHERE substr(checkin_time, 1, 10) >= ?
-       GROUP BY d`
+       GROUP BY d`,
     )
     .all(dateOffsetStr(-days + 1).slice(0, 10)) as Array<{ d: string; c: number }>;
   const map = Object.fromEntries(rows.map((r) => [r.d, r.c]));
@@ -61,7 +61,7 @@ router.get('/ranking', (req, res) => {
               COALESCE(SUM(r.duration_minutes), 0) AS minutes,
               COUNT(r.id) AS sessions
        FROM checkin_records r JOIN users u ON u.id = r.user_id
-       GROUP BY r.user_id ORDER BY minutes DESC LIMIT 10`
+       GROUP BY r.user_id ORDER BY minutes DESC LIMIT 10`,
     )
     .all() as Array<{ name: string; username: string; minutes: number; sessions: number }>;
   res.json(list);

@@ -23,8 +23,12 @@
         </el-button>
       </el-empty>
 
-      <el-alert class="tip" type="warning" :closable="false"
-        title="学生可用手机扫描屏幕上的二维码自动填入，也可手动输入 6 位签到码。二维码 60 秒过期并轮换，防止截图外传。" />
+      <el-alert
+        class="tip"
+        type="warning"
+        :closable="false"
+        title="学生可用手机扫描屏幕上的二维码自动填入，也可手动输入 6 位签到码。二维码 60 秒过期并轮换，防止截图外传。"
+      />
     </el-card>
   </div>
 </template>

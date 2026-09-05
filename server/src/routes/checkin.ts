@@ -19,14 +19,14 @@ router.get('/status', (req, res) => {
       `SELECT r.*, u.name, u.username FROM checkin_records r
        JOIN users u ON u.id = r.user_id
        WHERE r.user_id = ? AND r.status = 'checked_in'
-       ORDER BY r.id DESC LIMIT 1`
+       ORDER BY r.id DESC LIMIT 1`,
     )
     .get(req.user.id) as (CheckinRecordRow & { name: string; username: string }) | undefined;
   const todayStr = nowStr().slice(0, 10);
   const stats = db
     .prepare(
       `SELECT COUNT(*) AS sessions, COALESCE(SUM(duration_minutes), 0) AS minutes
-       FROM checkin_records WHERE user_id = ? AND checkin_time >= ?`
+       FROM checkin_records WHERE user_id = ? AND checkin_time >= ?`,
     )
     .get(req.user.id, `${todayStr} 00:00:00`) as { sessions: number; minutes: number };
   res.json({ active: active || null, todaySessions: stats.sessions, todayMinutes: stats.minutes });
@@ -34,7 +34,9 @@ router.get('/status', (req, res) => {
 
 /** 签到（需有效动态码） */
 router.post('/in', (req, res) => {
-  const code = String(req.body?.code || '').trim().toUpperCase();
+  const code = String(req.body?.code || '')
+    .trim()
+    .toUpperCase();
   if (!code) return res.status(400).json({ message: '请输入签到码' });
 
   const codeStmt = db.prepare('SELECT * FROM checkin_codes WHERE code = ? AND expires_at > ?');
@@ -51,9 +53,7 @@ router.post('/in', (req, res) => {
   let result: { changes: number | bigint; lastInsertRowid: number | bigint };
   try {
     result = db
-      .prepare(
-        "INSERT INTO checkin_records (user_id, checkin_time, status, code_id) VALUES (?, ?, 'checked_in', ?)"
-      )
+      .prepare("INSERT INTO checkin_records (user_id, checkin_time, status, code_id) VALUES (?, ?, 'checked_in', ?)")
       .run(req.user.id, nowStr(), codeRow.id);
   } catch (err) {
     // 并发签到由部分唯一索引兜底，避免同一用户出现两条进行中记录
@@ -63,8 +63,7 @@ router.post('/in', (req, res) => {
     throw err;
   }
   const record = db.prepare('SELECT * FROM checkin_records WHERE id = ?').all(Number(result.lastInsertRowid))[0] as
-    | CheckinRecordRow
-    | undefined;
+    CheckinRecordRow | undefined;
   res.json({ message: '签到成功', record });
 });
 
@@ -81,7 +80,7 @@ router.post('/out', (req, res) => {
   // 条件更新保证并发签退只结算一次
   const info = db
     .prepare(
-      "UPDATE checkin_records SET checkout_time = ?, duration_minutes = ?, status = 'completed' WHERE id = ? AND status = 'checked_in'"
+      "UPDATE checkin_records SET checkout_time = ?, duration_minutes = ?, status = 'completed' WHERE id = ? AND status = 'checked_in'",
     )
     .run(checkoutTime, durationMinutes, active.id);
   if (info.changes === 0) {

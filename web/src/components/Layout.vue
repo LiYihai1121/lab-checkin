@@ -3,8 +3,13 @@
     <el-aside width="220px" class="aside">
       <BrandLogo compact />
       <div class="nav-caption">{{ store.isAdmin ? '管理工作台' : '我的实验室' }}</div>
-      <el-menu :default-active="$route.path" router background-color="#001529" text-color="#a6adb4"
-        active-text-color="#ffffff">
+      <el-menu
+        :default-active="$route.path"
+        router
+        background-color="#001529"
+        text-color="#a6adb4"
+        active-text-color="#ffffff"
+      >
         <el-menu-item v-for="m in menus" :key="m.path" :index="m.path">
           <el-icon><component :is="m.icon" /></el-icon>
           <span>{{ m.label }}</span>
@@ -39,8 +44,7 @@
 
     <!-- 修改密码弹窗 -->
     <el-dialog v-model="pwdDialog.visible" title="修改密码" width="400px">
-      <el-form ref="pwdFormRef" :model="pwdDialog" :rules="pwdRules" label-width="100px"
-        @keyup.enter="onChangePwd">
+      <el-form ref="pwdFormRef" :model="pwdDialog" :rules="pwdRules" label-width="100px" @keyup.enter="onChangePwd">
         <el-form-item label="原密码" prop="oldPassword">
           <el-input v-model="pwdDialog.oldPassword" type="password" show-password placeholder="输入当前密码" />
         </el-form-item>
@@ -65,7 +69,15 @@ import type { Component } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import type { FormInstance, FormRules } from 'element-plus';
-import { ArrowDown, DataAnalysis, Document, Postcard, Tickets, User as UserIcon, AlarmClock } from '@element-plus/icons-vue';
+import {
+  ArrowDown,
+  DataAnalysis,
+  Document,
+  Postcard,
+  Tickets,
+  User as UserIcon,
+  AlarmClock,
+} from '@element-plus/icons-vue';
 import request from '../api/request';
 import { useUserStore } from '../stores/user';
 import { appEnv } from '../config/env';
@@ -82,13 +94,13 @@ interface MenuItem {
 
 const studentMenus: MenuItem[] = [
   { path: '/checkin', label: '签到签退', icon: AlarmClock },
-  { path: '/my-records', label: '我的记录', icon: Tickets }
+  { path: '/my-records', label: '我的记录', icon: Tickets },
 ];
 const adminMenus: MenuItem[] = [
   { path: '/admin/dashboard', label: '统计看板', icon: DataAnalysis },
   { path: '/admin/qrcode', label: '签到二维码', icon: Postcard },
   { path: '/admin/records', label: '记录管理', icon: Document },
-  { path: '/admin/users', label: '用户管理', icon: UserIcon }
+  { path: '/admin/users', label: '用户管理', icon: UserIcon },
 ];
 const menus = computed(() => (store.isAdmin ? adminMenus : studentMenus));
 
@@ -110,7 +122,7 @@ const pwdRules: FormRules = {
   oldPassword: [{ required: true, message: '请输入原密码', trigger: 'blur' }],
   newPassword: [
     { required: true, message: '请输入新密码', trigger: 'blur' },
-    { min: 6, message: '新密码至少 6 位', trigger: 'blur' }
+    { min: 6, message: '新密码至少 6 位', trigger: 'blur' },
   ],
   confirmPassword: [
     { required: true, message: '请再次输入新密码', trigger: 'blur' },
@@ -119,9 +131,9 @@ const pwdRules: FormRules = {
         if (value !== pwdDialog.newPassword) callback(new Error('两次输入的密码不一致'));
         else callback();
       },
-      trigger: 'blur'
-    }
-  ]
+      trigger: 'blur',
+    },
+  ],
 };
 
 function openPwdDialog() {
@@ -135,7 +147,7 @@ async function onChangePwd() {
   try {
     const data = await request.put('/auth/password', {
       oldPassword: pwdDialog.oldPassword,
-      newPassword: pwdDialog.newPassword
+      newPassword: pwdDialog.newPassword,
     });
     ElMessage.success(data.message || '密码修改成功');
     pwdDialog.visible = false;

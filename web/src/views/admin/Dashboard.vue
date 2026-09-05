@@ -1,7 +1,13 @@
 <template>
   <div>
-    <el-alert v-if="loadError" class="load-error" type="warning" :closable="false" show-icon
-      title="统计数据刷新失败，将在下一轮自动重试" />
+    <el-alert
+      v-if="loadError"
+      class="load-error"
+      type="warning"
+      :closable="false"
+      show-icon
+      title="统计数据刷新失败，将在下一轮自动重试"
+    />
     <el-row :gutter="16">
       <el-col :xs="24" :sm="12" :lg="6" v-for="card in cards" :key="card.label">
         <el-card class="stat-card">
@@ -53,12 +59,18 @@ interface InLabItem {
   username: string;
 }
 
-const overview = ref<{ inLab: number; todayCount: number; totalUsers: number; todayMinutes: number; inLabList: InLabItem[] }>({
+const overview = ref<{
+  inLab: number;
+  todayCount: number;
+  totalUsers: number;
+  todayMinutes: number;
+  inLabList: InLabItem[];
+}>({
   inLab: 0,
   todayCount: 0,
   totalUsers: 0,
   todayMinutes: 0,
-  inLabList: []
+  inLabList: [],
 });
 const trendRef = ref<HTMLDivElement | null>(null);
 const rankRef = ref<HTMLDivElement | null>(null);
@@ -72,7 +84,7 @@ const cards = computed(() => [
   { label: '当前在馆', value: overview.value.inLab, color: '#67c23a' },
   { label: '今日签到人次', value: overview.value.todayCount, color: '#409eff' },
   { label: '学生总数', value: overview.value.totalUsers, color: '#e6a23c' },
-  { label: '今日总时长（分钟）', value: overview.value.todayMinutes, color: '#f56c6c' }
+  { label: '今日总时长（分钟）', value: overview.value.todayMinutes, color: '#f56c6c' },
 ]);
 
 function elapsed(from: unknown) {
@@ -88,15 +100,23 @@ async function load() {
   loadInProgress = true;
   try {
     overview.value = await request.get('/stats/overview', { silent: true });
-    const daily = await request.get('/stats/daily', { params: { days: 30 }, silent: true });
+    const daily = await request.get<Array<{ date: string; count: number }>>('/stats/daily', {
+      params: { days: 30 },
+      silent: true,
+    });
     trendChart?.setOption({
       tooltip: { trigger: 'axis' },
       grid: { left: 40, right: 20, top: 20, bottom: 30 },
-      xAxis: { type: 'category', data: daily.map((d: any) => d.date) },
+      xAxis: { type: 'category', data: daily.map((d) => d.date) },
       yAxis: { type: 'value', minInterval: 1 },
-      series: [{ type: 'line', smooth: true, areaStyle: {}, data: daily.map((d: any) => d.count), itemStyle: { color: '#409eff' } }]
+      series: [
+        { type: 'line', smooth: true, areaStyle: {}, data: daily.map((d) => d.count), itemStyle: { color: '#409eff' } },
+      ],
     });
-    const ranking = await request.get('/stats/ranking', { silent: true });
+    const ranking = await request.get<Array<{ name: string; username: string; minutes: number; sessions: number }>>(
+      '/stats/ranking',
+      { silent: true },
+    );
     rankChart?.setOption({
       // 无出勤数据时以居中文字代替空坐标系
       title: {
@@ -104,13 +124,13 @@ async function load() {
         text: '暂无出勤数据',
         left: 'center',
         top: 'middle',
-        textStyle: { color: '#b8ab97', fontSize: 13, fontWeight: 500 }
+        textStyle: { color: '#b8ab97', fontSize: 13, fontWeight: 500 },
       },
       tooltip: {},
       grid: { left: 80, right: 30, top: 10, bottom: 30 },
       xAxis: { type: 'value' },
-      yAxis: { type: 'category', data: ranking.map((r: any) => r.name).reverse() },
-      series: [{ type: 'bar', data: ranking.map((r: any) => r.minutes || 0).reverse(), itemStyle: { color: '#e6a23c' } }]
+      yAxis: { type: 'category', data: ranking.map((r) => r.name).reverse() },
+      series: [{ type: 'bar', data: ranking.map((r) => r.minutes || 0).reverse(), itemStyle: { color: '#e6a23c' } }],
     });
     loadError.value = false;
   } catch {

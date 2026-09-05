@@ -53,7 +53,7 @@ const loading = ref(false);
 const form = reactive({ username: '', password: '' });
 const rules: FormRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
 };
 
 // 真实健康探活（fetch 直连，避免走 axios 拦截器的错误弹窗）
@@ -63,8 +63,8 @@ const healthText = computed(
     ({
       checking: '正在连接服务…',
       ok: '系统运行中 · 数据实时同步',
-      down: '服务连接异常，请稍后重试'
-    })[health.value]
+      down: '服务连接异常，请稍后重试',
+    })[health.value],
 );
 onMounted(async () => {
   try {
@@ -122,7 +122,8 @@ async function onSubmit() {
 .brand-panel :deep(.brand-logo) {
   margin-bottom: 48px;
 }
-.eyebrow, .form-eyebrow {
+.eyebrow,
+.form-eyebrow {
   color: #f4c95d;
   font-size: 11px;
   font-weight: 800;
@@ -220,7 +221,8 @@ async function onSubmit() {
   .brand-panel h1 {
     font-size: 30px;
   }
-  .brand-panel p, .brand-foot {
+  .brand-panel p,
+  .brand-foot {
     display: none;
   }
 }

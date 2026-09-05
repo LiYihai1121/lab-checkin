@@ -1,10 +1,16 @@
 <template>
   <el-card>
     <div class="toolbar">
-      <el-date-picker v-model="range" type="daterange" range-separator="至" start-placeholder="开始日期"
-        end-placeholder="结束日期" value-format="YYYY-MM-DD" style="width: 260px" />
-      <el-input v-model="keyword" placeholder="用户名 / 姓名" clearable style="width: 200px"
-        @keyup.enter="load(1)" />
+      <el-date-picker
+        v-model="range"
+        type="daterange"
+        range-separator="至"
+        start-placeholder="开始日期"
+        end-placeholder="结束日期"
+        value-format="YYYY-MM-DD"
+        style="width: 260px"
+      />
+      <el-input v-model="keyword" placeholder="用户名 / 姓名" clearable style="width: 200px" @keyup.enter="load(1)" />
       <el-button type="primary" :icon="Search" :loading="tableLoading" @click="load(1)">查询</el-button>
     </div>
 
@@ -27,9 +33,22 @@
       </el-table-column>
     </el-table>
 
-    <el-pagination class="pager" background layout="total, prev, pager, next, sizes"
-      :total="total" :page-size="pageSize" :current-page="page" :page-sizes="[10, 20, 50]"
-      @current-change="load" @size-change="(s: number) => { pageSize = s; load(1); }" />
+    <el-pagination
+      class="pager"
+      background
+      layout="total, prev, pager, next, sizes"
+      :total="total"
+      :page-size="pageSize"
+      :current-page="page"
+      :page-sizes="[10, 20, 50]"
+      @current-change="load"
+      @size-change="
+        (s: number) => {
+          pageSize = s;
+          load(1);
+        }
+      "
+    />
   </el-card>
 </template>
 
@@ -57,8 +76,8 @@ async function load(p = page.value) {
         pageSize: pageSize.value,
         keyword: keyword.value,
         start: range.value?.[0],
-        end: range.value?.[1]
-      }
+        end: range.value?.[1],
+      },
     });
     list.value = data.list;
     total.value = data.total;

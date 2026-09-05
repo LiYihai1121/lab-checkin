@@ -27,7 +27,8 @@ body {
   min-width: 320px;
   color: #1f2937;
   background: var(--lab-surface);
-  background-image: linear-gradient(rgba(255, 253, 248, 0.45) 1px, transparent 1px),
+  background-image:
+    linear-gradient(rgba(255, 253, 248, 0.45) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 253, 248, 0.45) 1px, transparent 1px);
   background-size: 28px 28px;
   -webkit-font-smoothing: antialiased;

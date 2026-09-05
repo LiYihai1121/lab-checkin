@@ -14,9 +14,7 @@ describe('users admin API', () => {
   let studentId: number;
 
   beforeAll(async () => {
-    const login = await request(app)
-      .post('/api/auth/login')
-      .send({ username: 'admin', password: INIT_ADMIN_PASSWORD });
+    const login = await request(app).post('/api/auth/login').send({ username: 'admin', password: INIT_ADMIN_PASSWORD });
     adminToken = login.body.token;
 
     const created = await request(app)
@@ -26,9 +24,7 @@ describe('users admin API', () => {
     expect(created.status).toBe(200);
     studentId = created.body.id;
 
-    const stuLogin = await request(app)
-      .post('/api/auth/login')
-      .send({ username: 'stu_list', password: STU_PASSWORD });
+    const stuLogin = await request(app).post('/api/auth/login').send({ username: 'stu_list', password: STU_PASSWORD });
     studentToken = stuLogin.body.token;
   });
 
@@ -47,15 +43,37 @@ describe('users admin API', () => {
   it('validates create user input', async () => {
     const base = { password: crypto.randomBytes(8).toString('hex'), name: '校验', role: 'student' };
     const auth = { Authorization: `Bearer ${adminToken}` };
-    expect((await request(app).post('/api/users').set(auth).send({ ...base, username: 'x' })).status).toBe(400);
     expect(
-      (await request(app).post('/api/users').set(auth).send({ ...base, username: 'ok_name', password: '123' })).status
+      (
+        await request(app)
+          .post('/api/users')
+          .set(auth)
+          .send({ ...base, username: 'x' })
+      ).status,
     ).toBe(400);
     expect(
-      (await request(app).post('/api/users').set(auth).send({ ...base, username: 'ok_name', name: ' ' })).status
+      (
+        await request(app)
+          .post('/api/users')
+          .set(auth)
+          .send({ ...base, username: 'ok_name', password: '123' })
+      ).status,
     ).toBe(400);
     expect(
-      (await request(app).post('/api/users').set(auth).send({ ...base, username: 'ok_name', role: 'boss' })).status
+      (
+        await request(app)
+          .post('/api/users')
+          .set(auth)
+          .send({ ...base, username: 'ok_name', name: ' ' })
+      ).status,
+    ).toBe(400);
+    expect(
+      (
+        await request(app)
+          .post('/api/users')
+          .set(auth)
+          .send({ ...base, username: 'ok_name', role: 'boss' })
+      ).status,
     ).toBe(400);
   });
 
@@ -69,9 +87,7 @@ describe('users admin API', () => {
   });
 
   it('prevents demoting the last admin', async () => {
-    const list = await request(app)
-      .get('/api/users?keyword=admin')
-      .set('Authorization', `Bearer ${adminToken}`);
+    const list = await request(app).get('/api/users?keyword=admin').set('Authorization', `Bearer ${adminToken}`);
     const adminRow = list.body.list.find((u: { username: string }) => u.username === 'admin');
     const res = await request(app)
       .put(`/api/users/${adminRow.id}`)
@@ -87,9 +103,7 @@ describe('users admin API', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ name: '改名同学' });
     expect(res.status).toBe(200);
-    const list = await request(app)
-      .get('/api/users?keyword=stu_list')
-      .set('Authorization', `Bearer ${adminToken}`);
+    const list = await request(app).get('/api/users?keyword=stu_list').set('Authorization', `Bearer ${adminToken}`);
     expect(list.body.list[0].name).toBe('改名同学');
   });
 
@@ -102,9 +116,7 @@ describe('users admin API', () => {
 
     const del = await request(app).delete(`/api/users/${studentId}`).set('Authorization', `Bearer ${adminToken}`);
     expect(del.status).toBe(200);
-    const gone = await request(app)
-      .post('/api/auth/login')
-      .send({ username: 'stu_list', password: STU_PASSWORD });
+    const gone = await request(app).post('/api/auth/login').send({ username: 'stu_list', password: STU_PASSWORD });
     expect(gone.status).toBe(401);
   });
 });

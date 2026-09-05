@@ -31,9 +31,8 @@ router.post('/login', (req, res) => {
 
 /** 当前登录用户信息 */
 router.get('/me', authenticate, (req, res) => {
-  const user = db
-    .prepare('SELECT id, username, name, role, created_at FROM users WHERE id = ?')
-    .get(req.user.id) as Omit<UserRow, 'password_hash'> | undefined;
+  const user = db.prepare('SELECT id, username, name, role, created_at FROM users WHERE id = ?').get(req.user.id) as
+    Omit<UserRow, 'password_hash'> | undefined;
   if (!user) return res.status(401).json({ message: '用户不存在' });
   res.json({ user });
 });
@@ -48,8 +47,7 @@ router.put('/password', authenticate, (req, res) => {
     return res.status(400).json({ message: '新密码至少 6 位' });
   }
   const row = db.prepare('SELECT password_hash FROM users WHERE id = ?').get(req.user.id) as
-    | { password_hash: string }
-    | undefined;
+    { password_hash: string } | undefined;
   if (!row || !bcrypt.compareSync(String(oldPassword), row.password_hash)) {
     return res.status(400).json({ message: '原密码错误' });
   }
@@ -68,15 +66,14 @@ router.post('/password/reset', (req, res) => {
   }
 
   const user = db.prepare('SELECT id FROM users WHERE username = ?').get(String(username).trim()) as
-    | { id: number }
-    | undefined;
+    { id: number } | undefined;
   const tokenHash = crypto.createHash('sha256').update(String(resetCode).trim().toUpperCase()).digest('hex');
   const token = user
     ? (db
         .prepare(
           `SELECT id FROM password_reset_tokens
            WHERE user_id = ? AND token_hash = ? AND used_at IS NULL AND expires_at > ?
-           ORDER BY id DESC LIMIT 1`
+           ORDER BY id DESC LIMIT 1`,
         )
         .get(user.id, tokenHash, nowStr()) as ResetTokenRow | undefined)
     : undefined;

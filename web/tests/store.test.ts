@@ -10,7 +10,7 @@ vi.stubGlobal('localStorage', {
   },
   removeItem: (k: string) => {
     delete mem[k];
-  }
+  },
 });
 
 const { useUserStore } = await import('../src/stores/user');
