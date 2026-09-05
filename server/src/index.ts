@@ -6,6 +6,7 @@ import path from 'node:path';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import './db/database.ts';
+import { environment, appVersion } from './config/environment.ts';
 import authRoutes from './routes/auth.ts';
 import userRoutes from './routes/users.ts';
 import qrcodeRoutes from './routes/qrcode.ts';
@@ -14,7 +15,8 @@ import recordRoutes from './routes/records.ts';
 import statsRoutes from './routes/stats.ts';
 
 const app = express();
-const PORT = Number(process.env.PORT) || 3000;
+// 默认端口按环境区分：开发/生产 3000，测试 3100；PORT 显式设置时优先
+const PORT = Number(process.env.PORT) || environment.port;
 
 // 反向代理部署时设置 TRUST_PROXY=true（或写跳数），限流按真实客户端 IP 计数
 if (process.env.TRUST_PROXY) {
@@ -56,7 +58,14 @@ app.use('/api/auth/password/reset', resetLimiter);
 app.use('/api/checkin/in', checkinLimiter);
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', service: 'lab-checkin', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'ok',
+    service: 'lab-checkin',
+    environment: environment.name,
+    environmentLabel: environment.label,
+    version: appVersion,
+    timestamp: new Date().toISOString()
+  });
 });
 
 app.use('/api/auth', authRoutes);
@@ -93,8 +102,9 @@ const server = app.listen(PORT, () => {
   const corsDesc = Array.isArray(allowedOrigins)
     ? allowedOrigins.join(', ')
     : '任意来源（未设置 CORS_ORIGIN）';
+  const dbDesc = process.env.DB_PATH || `server/data/${environment.dbFile}`;
   console.info(
-    `[环境] NODE_ENV=${process.env.NODE_ENV || 'development'} | 数据库=${process.env.DB_PATH || 'server/data/lab-checkin.db'} | CORS=${corsDesc}`
+    `[环境] ${environment.label}（NODE_ENV=${environment.name}）| 版本 v${appVersion} | 数据库=${dbDesc} | CORS=${corsDesc}`
   );
 });
 

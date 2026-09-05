@@ -5,8 +5,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "vite --mode development",
+    "dev:test": "vite --mode test",
+    "build": "vite build --mode production",
+    "build:test": "vite build --mode test",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

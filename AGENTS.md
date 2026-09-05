@@ -29,4 +29,5 @@
 ## Environment notes
 
 - The default JWT secret is development-only. Production deployments must set `JWT_SECRET` (the server refuses to start without it when `NODE_ENV=production`); `PORT`, `CORS_ORIGIN`, `DB_PATH`, `ADMIN_PASSWORD`, `CREATE_DEFAULT_ADMIN`, and `TRUST_PROXY` are also environment-controlled. See [README.md](README.md) for the full list and deployment examples.
+- The three environments (development / test / production) differ by `NODE_ENV` and have per-environment defaults (port, SQLite file name) centralized in `server/src/config/environment.ts` and frontend identity in `web/src/config/env.ts` — dev 5173→3000, test 5174→3100, production same-origin. `server/.env.development` and `server/.env.test` are committed (no secrets); production config goes in git-ignored `server/.env`. Keep new environment-specific behavior in those modules, not scattered at call sites.
 - The default administrator is intended for first-run setup only and should change the password after login. The login page must not display default credentials.

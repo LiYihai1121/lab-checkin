@@ -9,7 +9,9 @@
   },
   "scripts": {
     "start": "node --env-file-if-exists=.env src/index.ts",
-    "dev": "node --watch --env-file-if-exists=.env src/index.ts",
+    "dev": "node --watch --env-file-if-exists=.env.development src/index.ts",
+    "dev:test": "node --watch --env-file-if-exists=.env.test src/index.ts",
+    "start:test": "node --env-file-if-exists=.env.test src/index.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "version:check": "node ../scripts/check-version.ts"

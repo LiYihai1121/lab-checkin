@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useUserStore } from '../stores/user';
+import { appEnv } from '../config/env';
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -58,9 +59,9 @@ router.beforeEach((to) => {
   if (to.meta.adminOnly && !store.isAdmin) return '/checkin';
 });
 
-// 浏览器标签页标题随页面切换
+// 浏览器标签页标题随页面切换，基础标题携带环境标识（开发/测试/生产）
 router.afterEach((to) => {
-  document.title = to.meta?.title ? `${to.meta.title} · 实验室签到系统` : '实验室签到系统';
+  document.title = to.meta?.title ? `${to.meta.title} · ${appEnv.baseTitle}` : appEnv.baseTitle;
 });
 
 export default router;

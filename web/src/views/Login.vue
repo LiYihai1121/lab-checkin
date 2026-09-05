@@ -15,6 +15,9 @@
         <div class="form-eyebrow">WELCOME BACK</div>
         <h2 class="login-title">登录工作台</h2>
         <p class="login-subtitle">使用你的实验室账号继续</p>
+        <el-tag v-if="!appEnv.isProduction" :type="appEnv.tag" effect="light" class="env-banner">
+          {{ appEnv.label }} · 请勿用于真实数据
+        </el-tag>
         <el-form ref="formRef" :model="form" :rules="rules" size="large" @keyup.enter="onSubmit">
           <el-form-item prop="username">
             <el-input v-model="form.username" placeholder="用户名" :prefix-icon="User" />
@@ -39,6 +42,7 @@ import { User, Lock } from '@element-plus/icons-vue';
 import request from '../api/request';
 import { safeRedirect } from '../utils/security';
 import { useUserStore } from '../stores/user';
+import { appEnv } from '../config/env';
 import BrandLogo from '../components/BrandLogo.vue';
 
 const router = useRouter();
@@ -176,6 +180,9 @@ async function onSubmit() {
 .login-subtitle {
   margin: 0 0 30px;
   color: #8b9a98;
+}
+.env-banner {
+  margin-bottom: 18px;
 }
 .login-btn {
   width: 100%;

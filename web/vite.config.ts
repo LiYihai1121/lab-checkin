@@ -5,6 +5,12 @@ import viteCompression from 'vite-plugin-compression';
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_');
 
+  // 三大环境独立并行：开发 5173→后端3000，测试 5174→后端3100；生产构建同源部署
+  const devPorts: Record<string, number> = { development: 5173, test: 5174 };
+  const apiTargets: Record<string, string> = { development: 'http://localhost:3000', test: 'http://localhost:3100' };
+  // 产物目录按环境区分，避免测试构建被误当作生产部署
+  const outDirs: Record<string, string> = { production: 'dist', test: 'dist-test', development: 'dist-dev' };
+
   return {
     plugins: [
       vue(),
@@ -13,16 +19,17 @@ export default defineConfig(({ mode }) => {
       viteCompression({ algorithm: 'brotliCompress' })
     ],
     server: {
-      port: 5173,
+      port: devPorts[mode] ?? 5173,
       proxy: {
         '/api': {
-          // 默认指向本地后端，可通过 web/.env 的 VITE_API_PROXY_TARGET 覆盖
-          target: env.VITE_API_PROXY_TARGET || 'http://localhost:3000',
+          // 默认指向当前环境的本地后端，可通过 web/.env 的 VITE_API_PROXY_TARGET 覆盖
+          target: env.VITE_API_PROXY_TARGET || apiTargets[mode] || 'http://localhost:3000',
           changeOrigin: true
         }
       }
     },
     build: {
+      outDir: outDirs[mode] ?? 'dist-dev',
       rollupOptions: {
         output: {
           manualChunks(id) {

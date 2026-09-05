@@ -17,6 +17,9 @@
         <div class="header-heading">
           <div class="kicker">LAB CHECK-IN / {{ store.isAdmin ? 'ADMIN' : 'STUDENT' }}</div>
           <span class="title">{{ $route.meta.title || '' }}</span>
+          <el-tag v-if="!appEnv.isProduction" :type="appEnv.tag" size="small" effect="plain" class="env-tag">
+            {{ appEnv.label }}
+          </el-tag>
         </div>
         <el-dropdown class="account-menu" @command="onCommand">
           <span class="user-info">
@@ -65,6 +68,7 @@ import type { FormInstance, FormRules } from 'element-plus';
 import { ArrowDown, DataAnalysis, Document, Postcard, Tickets, User as UserIcon, AlarmClock } from '@element-plus/icons-vue';
 import request from '../api/request';
 import { useUserStore } from '../stores/user';
+import { appEnv } from '../config/env';
 import BrandLogo from './BrandLogo.vue';
 
 const store = useUserStore();
@@ -194,6 +198,10 @@ onMounted(async () => {
 .title {
   font-size: 16px;
   font-weight: 600;
+}
+.env-tag {
+  margin-left: 10px;
+  vertical-align: 2px;
 }
 .user-info {
   cursor: pointer;

@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import bcrypt from 'bcryptjs';
+import { environment } from '../config/environment.ts';
 
 // node:sqlite 通过 require 加载：部分打包/测试工具链尚不能静态解析该内置模块
 const require = createRequire(import.meta.url);
@@ -19,7 +20,8 @@ type UntypedStatement = Omit<StatementSync, 'get' | 'all'> & {
   all(...params: any[]): any[];
 };
 
-const db = new DatabaseSync(process.env.DB_PATH || path.join(dataDir, 'lab-checkin.db')) as Omit<
+// 默认数据库文件按环境区分（测试环境独立建库），DB_PATH 显式设置时优先
+const db = new DatabaseSync(process.env.DB_PATH || path.join(dataDir, environment.dbFile)) as Omit<
   InstanceType<typeof DatabaseSync>,
   'prepare'
 > & {

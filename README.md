@@ -132,23 +132,30 @@ lab-checkin/
 
 ## 环境安排（开发 / 测试 / 生产）
 
-| 环境 | 用途 | 数据库 | JWT_SECRET | 默认管理员 | 启动方式 |
-| --- | --- | --- | --- | --- | --- |
-| 开发 | 本地开发调试 | `server/data/lab-checkin.db`（自动创建） | 使用内置开发密钥 | 自动创建 `admin` / `admin123` | 终端分别执行 `cd server && npm run dev` 与 `cd web && npm run dev` |
-| 测试 | Vitest 自动化测试 | 自动注入 `:memory:` 内存库，永不触碰真实数据库 | 无需设置 | 由 `server/tests/setup.js` 注入 | `cd server && npm test`、`cd web && npm test` |
-| 生产 | 实际部署 | 经 `DB_PATH` 指定（默认同开发） | **必填**强随机密钥，缺失时拒绝启动 | 建好账号后设 `CREATE_DEFAULT_ADMIN=false` | 见下方「生产部署」 |
+三大环境**独立并行、互不串库**，并在界面上可一眼区分（页面标题后缀、界面环境徽标、`/api/health` 的 `environment` 字段、启动日志、构建产物目录）：
 
-后端启动脚本（`npm run dev` / `npm start`）会自动加载 `server/.env`。自定义配置时复制模板并按需取消注释：
+| 环境 | 用途 | 端口（前端→后端） | 数据库 | 启动方式 |
+| --- | --- | --- | --- | --- |
+| 开发（默认） | 日常开发调试 | 5173 → 3000 | `server/data/lab-checkin.db` | `cd server && npm run dev` 与 `cd web && npm run dev` |
+| 测试 | 联调/演示，独立测试库与 Vitest 自动化测试 | 5174 → 3100 | `server/data/lab-checkin-test.db`（Vitest 用 `:memory:` 内存库） | `cd server && npm run dev:test` 与 `cd web && npm run dev:test` |
+| 生产 | 实际部署 | 同源（后端 3000 或容器端口） | 经 `DB_PATH` 指定（默认同开发） | `npm run build` + `npm start`，或见「生产部署」 |
 
-```bash
-cp server/.env.example server/.env
-```
+环境标识区分方式：
 
-`.env` 已被 git 忽略，不会入库。前端开发服务器的 `/api` 代理目标默认 `http://localhost:3000`，需要指向其他后端时复制 [web/.env.example](web/.env.example) 为 `web/.env` 并设置 `VITE_API_PROXY_TARGET`。
+- **页面标题**：开发/测试构建为 `实验室签到系统（开发/测试环境）`，生产为 `实验室签到系统`
+- **界面徽标**：开发（橙色）/测试（红色）构建在页头与登录页显示环境标签，生产不显示
+- **`/api/health`**：返回 `environment`（development/test/production）、`environmentLabel` 与 `version` 字段
+- **构建产物**：生产 `web/dist`、测试 `web/dist-test`、开发 `web/dist-dev`，避免误部署
+
+### 环境文件约定
+
+- 后端环境定义集中在 [server/src/config/environment.ts](server/src/config/environment.ts)（端口、数据库文件名等默认值按环境区分）；前端标识在 [web/src/config/env.ts](web/src/config/env.ts)
+- `server/.env.development`、`server/.env.test` 已入库（无密钥，全员共用）；生产配置复制 `server/.env.production.example` 为 `server/.env`（已被 git 忽略）。系统环境变量始终优先于文件
+- `web/.env.development`、`web/.env.test`、`web/.env.production`（仅含 `VITE_APP_ENV` 构建标识）已入库；个人代理覆盖用 `web/.env`（已被 git 忽略）
 
 ## 环境变量
 
-后端变量可在 `server/.env`（由启动脚本自动加载，模板见 [server/.env.example](server/.env.example)）或启动环境中设置：
+后端变量可在对应环境的 `server/.env.*` 文件（由启动脚本自动加载）或启动环境中设置（系统环境变量优先）：
 
 | 变量 | 说明 |
 | --- | --- |

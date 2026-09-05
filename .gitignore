@@ -1,8 +1,10 @@
 # dependencies
 node_modules/
 
-# build output
+# build output（产物目录按环境区分）
 web/dist/
+web/dist-test/
+web/dist-dev/
 
 # database
 server/data/*.db
@@ -10,9 +12,16 @@ server/data/*.db-shm
 server/data/*.db-wal
 
 # env & secrets
-.env
-.env.*
-!.env.example
+# server 环境文件可能含密钥一律不入库；仅无密钥的默认环境文件与生产模板放行
+server/.env
+server/.env.*
+!server/.env.development
+!server/.env.test
+!server/.env.production.example
+# web 的 mode 文件仅含构建标识（VITE_APP_ENV），入库；个人覆盖文件不入库
+web/.env
+web/.env.local
+web/.env.*.local
 
 # tooling local state
 .mimosa/
