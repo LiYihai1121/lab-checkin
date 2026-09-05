@@ -1,0 +1,51 @@
+{
+  // ===================== 编辑与格式化（对齐 Prettier 基线） =====================
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.rulers": [120],
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "files.eol": "\n",
+  "files.encoding": "utf8",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  "files.associations": {
+    "*.env": "dotenv",
+    ".env.*": "dotenv"
+  },
+
+  // ===================== ESLint（双包平面配置） =====================
+  "eslint.useFlatConfig": true,
+  // 分包启用各自的 eslint.config.js，避免跨包误用规则
+  "eslint.workingDirectories": [{ "pattern": "server" }, { "pattern": "web" }],
+  "eslint.validate": ["javascript", "typescript", "vue"],
+
+  // ===================== TypeScript / Vue =====================
+  // 统一使用工作区 TS 版本（与 vue-tsc/tsc 一致，弹出提示后选择“使用工作区版本”）
+  "typescript.tsdk": "web/node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+
+  // ===================== 搜索与监听排除（大仓库性能） =====================
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/dist-test": true,
+    "**/dist-dev": true,
+    "**/package-lock.json": true,
+    "server/data": true,
+    "**/*.db": true,
+    ".zcode": true
+  },
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/dist-test/**": true,
+    "**/dist-dev/**": true,
+    "server/data/**": true
+  },
+
+  // ===================== 包管理器 =====================
+  "npm.packageManager": "npm",
+  "npm.excludeGlobPatterns": ["**/node_modules/**"]
+}

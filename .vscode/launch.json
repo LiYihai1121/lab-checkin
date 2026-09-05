@@ -1,49 +1,109 @@
 {
     "version": "0.2.0",
     "configurations": [
-        
         {
             "type": "node",
             "request": "launch",
-            "name": "后端：调试 Express API（node --watch）",
+            "name": "后端：开发环境 (3000)",
             "cwd": "${workspaceFolder}/server",
             "runtimeExecutable": "node",
             "runtimeArgs": [
                 "--watch",
-                "${workspaceFolder}/server/src/index.js"
+                "--env-file-if-exists=${workspaceFolder}/server/.env.development",
+                "${workspaceFolder}/server/src/index.ts"
             ],
-            "skipFiles": ["<node_internal>/**"],
+            "skipFiles": ["<node_internals>/**"],
             "console": "integratedTerminal"
         },
         {
             "type": "node",
             "request": "launch",
-            "name": "前端：Vite 开发服务器",
-            "cwd": "${workspaceFolder}/web",
-            "runtimeExecutable": "npm",
+            "name": "后端：测试环境 (3100)",
+            "cwd": "${workspaceFolder}/server",
+            "runtimeExecutable": "node",
             "runtimeArgs": [
-                "run",
-                "--prefix",
-                "${workspaceFolder}/web",
-                "dev"
+                "--watch",
+                "--env-file-if-exists=${workspaceFolder}/server/.env.test",
+                "${workspaceFolder}/server/src/index.ts"
             ],
+            "skipFiles": ["<node_internals>/**"],
             "console": "integratedTerminal"
+        },
+        {
+            "type": "node-terminal",
+            "request": "launch",
+            "name": "前端：开发服务器 (5173)",
+            "command": "npm run dev",
+            "cwd": "${workspaceFolder}/web"
+        },
+        {
+            "type": "node-terminal",
+            "request": "launch",
+            "name": "前端：测试服务器 (5174)",
+            "command": "npm run dev:test",
+            "cwd": "${workspaceFolder}/web"
         },
         {
             "type": "msedge",
             "request": "launch",
-            "name": "前端：Edge 调试页面",
+            "name": "浏览器：调试前端（开发 5173）",
             "url": "http://localhost:5173",
             "webRoot": "${workspaceFolder}/web"
+        },
+        {
+            "type": "msedge",
+            "request": "launch",
+            "name": "浏览器：调试前端（测试 5174）",
+            "url": "http://localhost:5174",
+            "webRoot": "${workspaceFolder}/web"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Vitest：调试当前测试文件（server）",
+            "cwd": "${workspaceFolder}/server",
+            "runtimeExecutable": "node",
+            "runtimeArgs": [
+                "--inspect-brk",
+                "${workspaceFolder}/server/node_modules/vitest/vitest.mjs",
+                "run",
+                "${fileBasename}"
+            ],
+            "skipFiles": ["<node_internals>/**"],
+            "console": "integratedTerminal"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Vitest：调试当前测试文件（web）",
+            "cwd": "${workspaceFolder}/web",
+            "runtimeExecutable": "node",
+            "runtimeArgs": [
+                "--inspect-brk",
+                "${workspaceFolder}/web/node_modules/vitest/vitest.mjs",
+                "run",
+                "${fileBasename}"
+            ],
+            "skipFiles": ["<node_internals>/**"],
+            "console": "integratedTerminal"
         }
     ],
     "compounds": [
         {
-            "name": "全栈：后端 + 前端 + 浏览器",
+            "name": "全栈：开发环境（后端 + 前端 + 浏览器）",
             "configurations": [
-                "后端：调试 Express API（node --watch）",
-                "前端：Vite 开发服务器",
-                "前端：Edge 调试页面"
+                "后端：开发环境 (3000)",
+                "前端：开发服务器 (5173)",
+                "浏览器：调试前端（开发 5173）"
+            ],
+            "stopAll": true
+        },
+        {
+            "name": "全栈：测试环境（后端 + 前端 + 浏览器）",
+            "configurations": [
+                "后端：测试环境 (3100)",
+                "前端：测试服务器 (5174)",
+                "浏览器：调试前端（测试 5174）"
             ],
             "stopAll": true
         }

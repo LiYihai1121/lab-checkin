@@ -1,0 +1,20 @@
+{
+  "recommendations": [
+    // 框架与语言
+    "Vue.volar", // Vue 3 官方语言支持（<script setup lang="ts"> 必备）
+    "dbaeumer.vscode-eslint", // ESLint 实时校验与保存修复
+    "esbenp.prettier-vscode", // Prettier 格式化（保存即格式化）
+    // 测试
+    "vitest.explorer", // Vitest 测试面板与调试
+    // 后端 / 数据
+    "alexcvzz.vscode-sqlite", // SQLite 查看/查询（server/data/*.db）
+    "mikestead.dotenv", // .env* 文件语法高亮
+    // 部署与交付
+    "ms-azuretools.vscode-docker", // Dockerfile / docker-compose
+    "redhat.vscode-yaml", // compose 与 CI 工作流 YAML
+    // 工程规范与体验
+    "editorconfig.editorconfig", // .editorconfig 生效
+    "eamodio.gitlens", // Git 历史 / Blame / 提交对比
+    "usernamehw.errorlens" // 行内错误提示，配合 strict TS
+  ]
+}

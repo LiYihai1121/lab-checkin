@@ -1,0 +1,80 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "server: typecheck",
+      "type": "npm",
+      "script": "typecheck",
+      "path": "server",
+      "problemMatcher": ["$tsc"],
+      "group": "build"
+    },
+    {
+      "label": "server: lint",
+      "type": "npm",
+      "script": "lint",
+      "path": "server",
+      "problemMatcher": ["$eslint-stylish"]
+    },
+    {
+      "label": "server: test",
+      "type": "npm",
+      "script": "test",
+      "path": "server",
+      "problemMatcher": [],
+      "group": { "kind": "test", "isDefault": true }
+    },
+    {
+      "label": "web: typecheck",
+      "type": "npm",
+      "script": "typecheck",
+      "path": "web",
+      "problemMatcher": ["$tsc"],
+      "group": "build"
+    },
+    {
+      "label": "web: lint",
+      "type": "npm",
+      "script": "lint",
+      "path": "web",
+      "problemMatcher": ["$eslint-stylish"]
+    },
+    {
+      "label": "web: test",
+      "type": "npm",
+      "script": "test",
+      "path": "web",
+      "problemMatcher": []
+    },
+    {
+      "label": "web: build（生产）",
+      "type": "npm",
+      "script": "build",
+      "path": "web",
+      "problemMatcher": [],
+      "group": { "kind": "build", "isDefault": true }
+    },
+    {
+      "label": "web: build:test（测试环境）",
+      "type": "npm",
+      "script": "build:test",
+      "path": "web",
+      "problemMatcher": []
+    },
+    {
+      "label": "全栈：质量门禁（typecheck+lint+test+build）",
+      "dependsOrder": "parallel",
+      "dependsOn": [
+        "server: typecheck",
+        "server: lint",
+        "server: test",
+        "web: typecheck",
+        "web: lint",
+        "web: test",
+        "web: build（生产）",
+        "web: build:test（测试环境）"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}
