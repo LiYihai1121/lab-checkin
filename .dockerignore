@@ -1,0 +1,12 @@
+**/node_modules
+**/dist
+**/.env
+**/.git
+**/.agents
+**/.zcode
+**/.mimosa
+**/.vscode
+**/server/data
+**/gui-test-screenshots
+**/*.log
+**/.DS_Store

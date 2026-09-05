@@ -187,3 +187,18 @@ JWT_SECRET=你的随机密钥 CORS_ORIGIN=https://lab.example.com npm start
 ```
 
 也可以把上述变量写入 `server/.env`（启动时自动加载，文件已被 git 忽略）；生产环境更推荐用系统环境变量或进程管理器注入密钥。
+
+### Docker 单容器部署
+
+仓库根目录提供 [Dockerfile](Dockerfile)：多阶段构建前端产物，由 Express 同源托管 `/api` 与静态资源，无需额外反向代理。
+
+```bash
+docker build -t lab-checkin .
+docker run -d -p 3000:3000 \
+  -e JWT_SECRET=你的随机密钥 \
+  -e CREATE_DEFAULT_ADMIN=false \
+  -v lab-checkin-data:/app/server/data \
+  --name lab-checkin lab-checkin
+```
+
+SQLite 数据库位于容器内 `/app/server/data`，建议像上面这样挂载卷持久化；`NODE_ENV=production` 已在镜像内设置。

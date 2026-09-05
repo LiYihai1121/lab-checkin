@@ -1,6 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
+import path from 'node:path';
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import './db/database.js';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
@@ -61,6 +64,16 @@ app.use('/api/qrcode', qrcodeRoutes);
 app.use('/api/checkin', checkinRoutes);
 app.use('/api/records', recordRoutes);
 app.use('/api/stats', statsRoutes);
+
+// 容器化部署时同源托管前端构建产物；本地开发无 dist 时自动跳过
+const webDistDir = path.resolve(fileURLToPath(new URL('../..', import.meta.url)), 'web', 'dist');
+if (existsSync(path.join(webDistDir, 'index.html'))) {
+  app.use(express.static(webDistDir));
+  app.use((req, res, next) => {
+    if (req.method !== 'GET' || req.path.startsWith('/api')) return next();
+    res.sendFile(path.join(webDistDir, 'index.html'));
+  });
+}
 
 app.use((req, res) => res.status(404).json({ message: '接口不存在' }));
 
