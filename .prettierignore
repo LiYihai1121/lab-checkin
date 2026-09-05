@@ -1,0 +1,7 @@
+node_modules/
+web/dist/
+web/dist-test/
+web/dist-dev/
+server/data/
+package-lock.json
+*.md

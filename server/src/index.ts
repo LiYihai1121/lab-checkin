@@ -87,8 +87,7 @@ if (existsSync(path.join(webDistDir, 'index.html'))) {
 
 app.use((req, res) => res.status(404).json({ message: '接口不存在' }));
 
-// eslint-disable-next-line no-unused-vars
-const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
+const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   console.error(err);
   if (err.type === 'entity.parse.failed' || err.status === 400) {
     return res.status(400).json({ message: '请求格式错误' });

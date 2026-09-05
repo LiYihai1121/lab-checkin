@@ -3,7 +3,6 @@ import crypto from 'node:crypto';
 import request from 'supertest';
 import db, { fmtDate } from '../src/db/database.ts';
 import { makeApp } from './helpers.ts';
-import type { UserRow } from '../src/types.ts';
 
 const app = makeApp();
 

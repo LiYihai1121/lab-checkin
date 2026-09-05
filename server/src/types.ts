@@ -41,6 +41,7 @@ export interface ResetTokenRow {
 }
 
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace -- Express 类型增补的标准写法
   namespace Express {
     interface Request {
       /** authenticate 中间件验证通过后写入的当前用户 */
