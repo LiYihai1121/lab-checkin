@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import crypto from 'node:crypto';
 import request from 'supertest';
-import db, { nowStr, fmtDate } from '../src/db/database.js';
-import { makeApp } from './helpers.js';
+import db, { nowStr, fmtDate } from '../src/db/database.ts';
+import { makeApp } from './helpers.ts';
 
 const app = makeApp();
 
@@ -11,14 +11,14 @@ const STU_PASSWORD = crypto.randomBytes(8).toString('hex');
 const STU2_PASSWORD = crypto.randomBytes(8).toString('hex');
 
 /** 通过登录接口换取 token（断言成功） */
-async function login(username, password) {
+async function login(username: string, password: string | undefined): Promise<string> {
   const body = { username, password };
   const res = await request(app).post('/api/auth/login').send(body);
   expect(res.status).toBe(200);
   return res.body.token;
 }
 
-async function createUser(adminToken, username, password, name) {
+async function createUser(adminToken: string, username: string, password: string, name: string): Promise<number> {
   const res = await request(app)
     .post('/api/users')
     .set('Authorization', `Bearer ${adminToken}`)
@@ -28,10 +28,10 @@ async function createUser(adminToken, username, password, name) {
 }
 
 describe('stats', () => {
-  let adminToken;
-  let studentToken;
-  let stuId;
-  let stu2Id;
+  let adminToken: string;
+  let studentToken: string;
+  let stuId: number;
+  let stu2Id: number;
 
   beforeAll(async () => {
     adminToken = await login('admin', ADMIN_PASSWORD);
@@ -86,8 +86,8 @@ describe('stats', () => {
       .get('/api/stats/ranking')
       .set('Authorization', `Bearer ${adminToken}`);
     expect(res.status).toBe(200);
-    const unfinished = res.body.find((r) => r.username === 'stu_active');
-    const finished = res.body.find((r) => r.username === 'stu_stats');
+    const unfinished = res.body.find((r: { username: string }) => r.username === 'stu_active');
+    const finished = res.body.find((r: { username: string }) => r.username === 'stu_stats');
     expect(unfinished.minutes).toBe(0);
     expect(unfinished.sessions).toBe(1);
     expect(finished.minutes).toBe(90);

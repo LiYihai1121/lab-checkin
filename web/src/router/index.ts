@@ -1,6 +1,15 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useUserStore } from '../stores/user';
 
+declare module 'vue-router' {
+  interface RouteMeta {
+    /** 页面标题（浏览器标签页展示） */
+    title?: string;
+    /** 仅管理员可访问，后端会再次校验 */
+    adminOnly?: boolean;
+  }
+}
+
 const routes = [
   { path: '/login', component: () => import('../views/Login.vue') },
   { path: '/forgot-password', component: () => import('../views/ForgotPassword.vue') },

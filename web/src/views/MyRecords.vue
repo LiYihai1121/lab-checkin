@@ -25,20 +25,22 @@
 
     <el-pagination class="pager" background layout="total, prev, pager, next, sizes"
       :total="total" :page-size="pageSize" :current-page="page"
-      :page-sizes="[10, 20, 50]" @current-change="(p) => load(p)" @size-change="(s) => { pageSize = s; load(1); }" />
+      :page-sizes="[10, 20, 50]" @current-change="(p: number) => load(p)"
+      @size-change="(s: number) => { pageSize = s; load(1); }" />
   </el-card>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { Search } from '@element-plus/icons-vue';
 import request from '../api/request';
+import type { CheckinRecordRow } from '../types';
 
-const list = ref([]);
+const list = ref<CheckinRecordRow[]>([]);
 const total = ref(0);
 const page = ref(1);
 const pageSize = ref(10);
-const range = ref(null);
+const range = ref<[string, string] | null>(null);
 const tableLoading = ref(false);
 
 async function load(p = page.value) {

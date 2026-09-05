@@ -56,10 +56,12 @@
   </el-container>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
+import type { Component } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
+import type { FormInstance, FormRules } from 'element-plus';
 import { ArrowDown, DataAnalysis, Document, Postcard, Tickets, User as UserIcon, AlarmClock } from '@element-plus/icons-vue';
 import request from '../api/request';
 import { useUserStore } from '../stores/user';
@@ -68,11 +70,17 @@ import BrandLogo from './BrandLogo.vue';
 const store = useUserStore();
 const router = useRouter();
 
-const studentMenus = [
+interface MenuItem {
+  path: string;
+  label: string;
+  icon: Component;
+}
+
+const studentMenus: MenuItem[] = [
   { path: '/checkin', label: '签到签退', icon: AlarmClock },
   { path: '/my-records', label: '我的记录', icon: Tickets }
 ];
-const adminMenus = [
+const adminMenus: MenuItem[] = [
   { path: '/admin/dashboard', label: '统计看板', icon: DataAnalysis },
   { path: '/admin/qrcode', label: '签到二维码', icon: Postcard },
   { path: '/admin/records', label: '记录管理', icon: Document },
@@ -80,7 +88,7 @@ const adminMenus = [
 ];
 const menus = computed(() => (store.isAdmin ? adminMenus : studentMenus));
 
-function onCommand(cmd) {
+function onCommand(cmd: string) {
   if (cmd === 'logout') {
     store.logout();
     ElMessage.success('已退出登录');
@@ -91,10 +99,10 @@ function onCommand(cmd) {
 }
 
 // ---- 修改密码 ----
-const pwdFormRef = ref();
+const pwdFormRef = ref<FormInstance>();
 const pwdSaving = ref(false);
 const pwdDialog = reactive({ visible: false, oldPassword: '', newPassword: '', confirmPassword: '' });
-const pwdRules = {
+const pwdRules: FormRules = {
   oldPassword: [{ required: true, message: '请输入原密码', trigger: 'blur' }],
   newPassword: [
     { required: true, message: '请输入新密码', trigger: 'blur' },
@@ -103,7 +111,7 @@ const pwdRules = {
   confirmPassword: [
     { required: true, message: '请再次输入新密码', trigger: 'blur' },
     {
-      validator: (rule, value, callback) => {
+      validator: (_rule, value, callback) => {
         if (value !== pwdDialog.newPassword) callback(new Error('两次输入的密码不一致'));
         else callback();
       },

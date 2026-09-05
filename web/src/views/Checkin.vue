@@ -75,7 +75,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
@@ -83,9 +83,15 @@ import { Camera, Key, Picture } from '@element-plus/icons-vue';
 import { Html5Qrcode } from 'html5-qrcode';
 import request from '../api/request';
 
+/** 进行中的签到记录（/checkin/status 的 active 字段） */
+interface ActiveSession {
+  checkin_time: string;
+  [key: string]: unknown;
+}
+
 const route = useRoute();
 const router = useRouter();
-const status = reactive({ active: null, todayMinutes: 0, todaySessions: 0 });
+const status = reactive({ active: null as ActiveSession | null, todayMinutes: 0, todaySessions: 0 });
 const code = ref('');
 const loading = ref(false);
 const statusLoading = ref(false);
@@ -95,9 +101,9 @@ const nowTick = ref(Date.now());
 const scannerVisible = ref(false);
 const scanError = ref('');
 const scanning = ref(false);
-const fileInput = ref();
-let scanner;
-let timer;
+const fileInput = ref<HTMLInputElement | null>(null);
+let scanner: Html5Qrcode | null = null;
+let timer: ReturnType<typeof setInterval> | undefined;
 
 const elapsedText = computed(() => {
   if (!status.active) return '00:00:00';
@@ -171,7 +177,7 @@ async function startScanner() {
   }
 }
 
-async function handleDecoded(decodedText) {
+async function handleDecoded(decodedText: string) {
   if (!scannerVisible.value || scanning.value) return;
   scanning.value = true;
   let scannedCode = decodedText;
@@ -191,9 +197,10 @@ function chooseImage() {
   fileInput.value?.click();
 }
 
-async function scanImage(event) {
-  const file = event.target.files?.[0];
-  event.target.value = '';
+async function scanImage(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  input.value = '';
   if (!file || scanning.value) return;
   scanning.value = true;
   scanError.value = '';

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { safeRedirect } from '../src/utils/security.js';
+import { safeRedirect } from '../src/utils/security';
 
 describe('safeRedirect 登录回跳白名单', () => {
   it('允许站内相对路径', () => {

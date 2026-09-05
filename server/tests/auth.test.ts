@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import crypto from 'node:crypto';
 import request from 'supertest';
-import db, { fmtDate } from '../src/db/database.js';
-import { makeApp } from './helpers.js';
+import db, { fmtDate } from '../src/db/database.ts';
+import { makeApp } from './helpers.ts';
+import type { UserRow } from '../src/types.ts';
 
 const app = makeApp();
 
@@ -13,7 +14,7 @@ const STU_PASSWORD = crypto.randomBytes(8).toString('hex');
 const STU_RESET_PASSWORD = crypto.randomBytes(8).toString('hex');
 
 describe('auth', () => {
-  let adminToken;
+  let adminToken: string;
 
   beforeAll(async () => {
     const res = await request(app)
@@ -102,7 +103,7 @@ describe('auth', () => {
   });
 
   it('rejects expired reset code', async () => {
-    const user = db.prepare("SELECT id FROM users WHERE username = 'stu_reset'").all()[0];
+    const user = db.prepare("SELECT id FROM users WHERE username = 'stu_reset'").all()[0] as { id: number };
     const code = crypto.randomBytes(6).toString('hex').toUpperCase();
     const tokenHash = crypto.createHash('sha256').update(code).digest('hex');
     db.prepare('INSERT INTO password_reset_tokens (user_id, token_hash, expires_at, created_at) VALUES (?, ?, ?, ?)').run(

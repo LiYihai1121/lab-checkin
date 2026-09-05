@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import crypto from 'node:crypto';
 import request from 'supertest';
-import db, { fmtDate } from '../src/db/database.js';
-import { makeApp } from './helpers.js';
+import db, { fmtDate } from '../src/db/database.ts';
+import { makeApp } from './helpers.ts';
 
 const app = makeApp();
 
@@ -10,14 +10,14 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const STU_PASSWORD = crypto.randomBytes(8).toString('hex');
 
 /** 通过登录接口换取 token（断言成功） */
-async function login(username, password) {
+async function login(username: string, password: string | undefined): Promise<string> {
   const body = { username, password };
   const res = await request(app).post('/api/auth/login').send(body);
   expect(res.status).toBe(200);
   return res.body.token;
 }
 
-async function createUser(adminToken, username, password, name) {
+async function createUser(adminToken: string, username: string, password: string, name: string): Promise<number> {
   const res = await request(app)
     .post('/api/users')
     .set('Authorization', `Bearer ${adminToken}`)
@@ -27,9 +27,9 @@ async function createUser(adminToken, username, password, name) {
 }
 
 describe('records', () => {
-  let adminToken;
-  let studentToken;
-  let stuId;
+  let adminToken: string;
+  let studentToken: string;
+  let stuId: number;
 
   beforeAll(async () => {
     adminToken = await login('admin', ADMIN_PASSWORD);

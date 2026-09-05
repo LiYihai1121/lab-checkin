@@ -40,19 +40,32 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-let echarts;
+import type { EChartsType } from 'echarts/core';
 import { ElMessage } from 'element-plus';
 import request from '../../api/request';
 
-const overview = ref({ inLab: 0, todayCount: 0, totalUsers: 0, todayMinutes: 0, inLabList: [] });
-const trendRef = ref();
-const rankRef = ref();
+interface InLabItem {
+  id: number;
+  checkin_time: string;
+  name: string;
+  username: string;
+}
+
+const overview = ref<{ inLab: number; todayCount: number; totalUsers: number; todayMinutes: number; inLabList: InLabItem[] }>({
+  inLab: 0,
+  todayCount: 0,
+  totalUsers: 0,
+  todayMinutes: 0,
+  inLabList: []
+});
+const trendRef = ref<HTMLDivElement | null>(null);
+const rankRef = ref<HTMLDivElement | null>(null);
 const loadError = ref(false);
-let trendChart;
-let rankChart;
-let timer;
+let trendChart: EChartsType | null = null;
+let rankChart: EChartsType | null = null;
+let timer: ReturnType<typeof setInterval> | undefined;
 let loadInProgress = false;
 
 const cards = computed(() => [
@@ -62,7 +75,7 @@ const cards = computed(() => [
   { label: '今日总时长（分钟）', value: overview.value.todayMinutes, color: '#f56c6c' }
 ]);
 
-function elapsed(from) {
+function elapsed(from: unknown) {
   const sec = Math.max(0, Math.floor((Date.now() - new Date(String(from).replace(' ', 'T')).getTime()) / 1000));
   const h = String(Math.floor(sec / 3600)).padStart(2, '0');
   const m = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
@@ -79,9 +92,9 @@ async function load() {
     trendChart?.setOption({
       tooltip: { trigger: 'axis' },
       grid: { left: 40, right: 20, top: 20, bottom: 30 },
-      xAxis: { type: 'category', data: daily.map((d) => d.date) },
+      xAxis: { type: 'category', data: daily.map((d: any) => d.date) },
       yAxis: { type: 'value', minInterval: 1 },
-      series: [{ type: 'line', smooth: true, areaStyle: {}, data: daily.map((d) => d.count), itemStyle: { color: '#409eff' } }]
+      series: [{ type: 'line', smooth: true, areaStyle: {}, data: daily.map((d: any) => d.count), itemStyle: { color: '#409eff' } }]
     });
     const ranking = await request.get('/stats/ranking', { silent: true });
     rankChart?.setOption({
@@ -96,8 +109,8 @@ async function load() {
       tooltip: {},
       grid: { left: 80, right: 30, top: 10, bottom: 30 },
       xAxis: { type: 'value' },
-      yAxis: { type: 'category', data: ranking.map((r) => r.name).reverse() },
-      series: [{ type: 'bar', data: ranking.map((r) => r.minutes || 0).reverse(), itemStyle: { color: '#e6a23c' } }]
+      yAxis: { type: 'category', data: ranking.map((r: any) => r.name).reverse() },
+      series: [{ type: 'bar', data: ranking.map((r: any) => r.minutes || 0).reverse(), itemStyle: { color: '#e6a23c' } }]
     });
     loadError.value = false;
   } catch {
@@ -113,23 +126,20 @@ async function load() {
 
 onMounted(async () => {
   // 按需动态加载 echarts core 和只需的图表/组件，进一步减小包体积
-  if (!echarts) {
-    const core = await import('echarts/core');
-    const charts = await import('echarts/charts');
-    const components = await import('echarts/components');
-    const renderers = await import('echarts/renderers');
+  const core = await import('echarts/core');
+  const charts = await import('echarts/charts');
+  const components = await import('echarts/components');
+  const renderers = await import('echarts/renderers');
 
-    const { LineChart, BarChart } = charts;
-    const { TooltipComponent, GridComponent } = components;
-    const { CanvasRenderer } = renderers;
+  const { LineChart, BarChart } = charts;
+  const { TooltipComponent, GridComponent } = components;
+  const { CanvasRenderer } = renderers;
 
-    // 注册需要的图表与组件到核心
-    core.use([LineChart, BarChart, TooltipComponent, GridComponent, CanvasRenderer]);
-    echarts = core;
-  }
+  // 注册需要的图表与组件到核心（重复注册无害）
+  core.use([LineChart, BarChart, TooltipComponent, GridComponent, CanvasRenderer]);
 
-  trendChart = echarts.init(trendRef.value);
-  rankChart = echarts.init(rankRef.value);
+  trendChart = core.init(trendRef.value!);
+  rankChart = core.init(rankRef.value!);
   window.addEventListener('resize', onResize);
   await load();
   timer = setInterval(load, 30000);

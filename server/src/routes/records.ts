@@ -1,16 +1,24 @@
 import { Router } from 'express';
-import db from '../db/database.js';
-import { likePattern, parsePagination, isValidDateStr } from '../utils/helpers.js';
-import { authenticate, requireAdmin } from '../middleware/auth.js';
+import type { Request } from 'express';
+import db from '../db/database.ts';
+import { likePattern, parsePagination, isValidDateStr } from '../utils/helpers.ts';
+import { authenticate, requireAdmin } from '../middleware/auth.ts';
 
 const router = Router();
 router.use(authenticate);
 
+interface QueryRecordsArgs {
+  whereSql: string;
+  params: (string | number)[];
+  page: number;
+  pageSize: number;
+}
+
 /** 分页查询签到记录（COUNT 与列表保持相同的 JOIN，关键字条件才能复用） */
-function queryRecords({ whereSql, params, page, pageSize }) {
-  const total = db
+function queryRecords({ whereSql, params, page, pageSize }: QueryRecordsArgs) {
+  const total = (db
     .prepare(`SELECT COUNT(*) AS c FROM checkin_records r JOIN users u ON u.id = r.user_id ${whereSql}`)
-    .all(...params)[0].c;
+    .all(...params)[0] as { c: number }).c;
   const list = db
     .prepare(
       `SELECT r.*, u.username, u.name FROM checkin_records r
@@ -23,17 +31,21 @@ function queryRecords({ whereSql, params, page, pageSize }) {
 }
 
 /** 校验并规范化日期范围参数；非法时返回 error 提示 */
-function rangeFilter(query) {
-  const conds = [];
-  const params = [];
-  for (const key of ['start', 'end']) {
+function rangeFilter(query: Request['query']): {
+  error: string | null;
+  conds: string[];
+  params: (string | number)[];
+} {
+  const conds: string[] = [];
+  const params: (string | number)[] = [];
+  for (const key of ['start', 'end'] as const) {
     const raw = query[key];
     if (raw === undefined) continue;
     if (Array.isArray(raw)) {
-      return { error: '日期参数重复' };
+      return { error: '日期参数重复', conds: [], params: [] };
     }
     if (!isValidDateStr(raw)) {
-      return { error: '日期格式应为 YYYY-MM-DD' };
+      return { error: '日期格式应为 YYYY-MM-DD', conds: [], params: [] };
     }
     if (key === 'start') {
       conds.push('r.checkin_time >= ?');
@@ -43,7 +55,7 @@ function rangeFilter(query) {
       params.push(`${raw} 23:59:59`);
     }
   }
-  return { conds, params };
+  return { error: null, conds, params };
 }
 
 /** 我的记录（学生） */

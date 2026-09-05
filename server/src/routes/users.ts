@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import crypto from 'node:crypto';
-import db, { nowStr, fmtDate, withTransaction } from '../db/database.js';
-import { hashPassword, likePattern, parsePagination, isUniqueConstraintError } from '../utils/helpers.js';
-import { authenticate, requireAdmin } from '../middleware/auth.js';
+import db, { nowStr, fmtDate, withTransaction } from '../db/database.ts';
+import { hashPassword, likePattern, parsePagination, isUniqueConstraintError } from '../utils/helpers.ts';
+import { authenticate, requireAdmin } from '../middleware/auth.ts';
+import type { UserRow, UserPublicRow } from '../types.ts';
 
 const router = Router();
 router.use(authenticate, requireAdmin);
@@ -12,18 +13,18 @@ router.get('/', (req, res) => {
   const { page, pageSize } = parsePagination(req.query);
   const kw = likePattern(req.query.keyword);
 
-  const total = db
+  const totalRow = db
     .prepare("SELECT COUNT(*) AS c FROM users WHERE username LIKE ? ESCAPE '\\' OR name LIKE ? ESCAPE '\\'")
-    .all(kw, kw)[0].c;
+    .all(kw, kw)[0] as { c: number };
   const list = db
     .prepare(
       `SELECT id, username, name, role, created_at FROM users
        WHERE username LIKE ? ESCAPE '\\' OR name LIKE ? ESCAPE '\\'
        ORDER BY id DESC LIMIT ? OFFSET ?`
     )
-    .all(kw, kw, pageSize, (page - 1) * pageSize);
+    .all(kw, kw, pageSize, (page - 1) * pageSize) as UserPublicRow[];
 
-  res.json({ list, total, page, pageSize });
+  res.json({ list, total: totalRow.c, page, pageSize });
 });
 
 /** 新增用户 */
@@ -58,7 +59,7 @@ router.post('/', (req, res) => {
 /** 生成一次性密码找回码（管理员交给用户使用） */
 router.post('/:id/password-reset-token', (req, res) => {
   const id = Number(req.params.id);
-  const user = db.prepare('SELECT id FROM users WHERE id = ?').all(id)[0];
+  const user = db.prepare('SELECT id FROM users WHERE id = ?').all(id)[0] as { id: number } | undefined;
   if (!user) return res.status(404).json({ message: '用户不存在' });
 
   const code = crypto.randomBytes(6).toString('hex').toUpperCase();
@@ -80,7 +81,7 @@ router.post('/:id/password-reset-token', (req, res) => {
 /** 编辑用户（姓名/角色，可顺带重置密码） */
 router.put('/:id', (req, res) => {
   const id = Number(req.params.id);
-  const user = db.prepare('SELECT * FROM users WHERE id = ?').all(id)[0];
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').all(id)[0] as UserRow | undefined;
   if (!user) return res.status(404).json({ message: '用户不存在' });
 
   const name = String(req.body?.name ?? user.name).trim() || user.name;
@@ -90,12 +91,12 @@ router.put('/:id', (req, res) => {
   }
   // 防止把最后一个管理员降级
   if (user.role === 'admin' && role !== 'admin') {
-    const admins = db.prepare("SELECT COUNT(*) AS c FROM users WHERE role = 'admin'").get().c;
-    if (admins <= 1) return res.status(400).json({ message: '系统至少需要保留一名管理员' });
+    const adminsRow = db.prepare("SELECT COUNT(*) AS c FROM users WHERE role = 'admin'").get() as { c: number };
+    if (adminsRow.c <= 1) return res.status(400).json({ message: '系统至少需要保留一名管理员' });
   }
 
   let sql = 'UPDATE users SET name = ?, role = ?';
-  const params = [name, role];
+  const params: (string | number)[] = [name, role];
   if (req.body?.password) {
     if (String(req.body.password).length < 6) {
       return res.status(400).json({ message: '密码至少 6 位' });
@@ -115,7 +116,7 @@ router.delete('/:id', (req, res) => {
   if (id === req.user.id) {
     return res.status(400).json({ message: '不能删除当前登录账号' });
   }
-  const user = db.prepare('SELECT id FROM users WHERE id = ?').all(id)[0];
+  const user = db.prepare('SELECT id FROM users WHERE id = ?').all(id)[0] as { id: number } | undefined;
   if (!user) return res.status(404).json({ message: '用户不存在' });
   withTransaction(() => {
     db.prepare('DELETE FROM password_reset_tokens WHERE user_id = ?').run(id);

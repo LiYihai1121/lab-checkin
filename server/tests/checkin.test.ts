@@ -1,22 +1,23 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import crypto from 'node:crypto';
 import request from 'supertest';
-import db, { nowStr, fmtDate } from '../src/db/database.js';
-import { signToken } from '../src/middleware/auth.js';
-import { makeApp } from './helpers.js';
+import db, { nowStr, fmtDate } from '../src/db/database.ts';
+import { signToken } from '../src/middleware/auth.ts';
+import { makeApp } from './helpers.ts';
+import type { UserRow } from '../src/types.ts';
 
 const app = makeApp();
 
 const FAKE_HASH = `bcrypt$${crypto.randomBytes(12).toString('hex')}`;
 
-function insertUser() {
+function insertUser(): number {
   const result = db
     .prepare('INSERT INTO users (username, password_hash, name, role, created_at) VALUES (?, ?, ?, ?, ?)')
     .run(`stu_chk_${crypto.randomBytes(4).toString('hex')}`, FAKE_HASH, '测试用户', 'student', nowStr());
   return Number(result.lastInsertRowid);
 }
 
-function insertCode(ttlMs) {
+function insertCode(ttlMs: number): string {
   const code = crypto.randomBytes(4).toString('hex').toUpperCase();
   db.prepare('INSERT INTO checkin_codes (code, expires_at, created_at) VALUES (?, ?, ?)').run(
     code,
@@ -27,12 +28,12 @@ function insertCode(ttlMs) {
 }
 
 describe('checkin routes', () => {
-  let token;
-  let userId;
+  let token: string;
+  let userId: number;
 
   beforeAll(() => {
     userId = insertUser();
-    const user = db.prepare('SELECT * FROM users WHERE id = ?').all(userId)[0];
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').all(userId)[0] as UserRow;
     token = signToken(user);
   });
 

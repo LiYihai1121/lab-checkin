@@ -36,17 +36,18 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
+import type { FormInstance, FormRules } from 'element-plus';
 import { useRouter } from 'vue-router';
 import request from '../api/request';
 
 const router = useRouter();
-const formRef = ref();
+const formRef = ref<FormInstance>();
 const loading = ref(false);
 const form = reactive({ username: '', resetCode: '', newPassword: '' });
-const rules = {
+const rules: FormRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   resetCode: [{ required: true, message: '请输入找回码', trigger: 'blur' }],
   newPassword: [
@@ -56,7 +57,7 @@ const rules = {
 };
 
 async function onSubmit() {
-  const valid = await formRef.value.validate().catch(() => false);
+  const valid = await formRef.value?.validate().catch(() => false);
   if (!valid) return;
   loading.value = true;
   try {

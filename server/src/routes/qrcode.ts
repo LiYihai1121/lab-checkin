@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import crypto from 'node:crypto';
-import db, { nowStr, fmtDate } from '../db/database.js';
-import { isUniqueConstraintError } from '../utils/helpers.js';
-import { authenticate, requireAdmin } from '../middleware/auth.js';
+import db, { nowStr, fmtDate } from '../db/database.ts';
+import { isUniqueConstraintError } from '../utils/helpers.ts';
+import { authenticate, requireAdmin } from '../middleware/auth.ts';
 
 const router = Router();
 
@@ -40,7 +40,7 @@ router.post('/generate', authenticate, requireAdmin, (req, res) => {
   res.json({ code, expiresAt: expiresAt.getTime(), expiresIn: CODE_TTL_SECONDS });
 });
 
-function randomCode() {
+function randomCode(): string {
   // 去除易混淆字符 0/O、1/I；crypto.randomInt 为密码学安全随机
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let s = '';
@@ -48,7 +48,7 @@ function randomCode() {
   return s;
 }
 
-function addSeconds(date, seconds) {
+function addSeconds(date: Date, seconds: number): Date {
   return new Date(date.getTime() + seconds * 1000);
 }
 

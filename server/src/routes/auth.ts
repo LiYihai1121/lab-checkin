@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
-import db, { nowStr, withTransaction } from '../db/database.js';
-import { hashPassword } from '../utils/helpers.js';
-import { authenticate, signToken } from '../middleware/auth.js';
+import db, { nowStr, withTransaction } from '../db/database.ts';
+import { hashPassword } from '../utils/helpers.ts';
+import { authenticate, signToken } from '../middleware/auth.ts';
+import type { UserRow, ResetTokenRow } from '../types.ts';
 
 const router = Router();
 
@@ -16,7 +17,7 @@ router.post('/login', (req, res) => {
   if (!username || !password) {
     return res.status(400).json({ message: '请输入用户名和密码' });
   }
-  const user = db.prepare('SELECT * FROM users WHERE username = ?').get(String(username).trim());
+  const user = db.prepare('SELECT * FROM users WHERE username = ?').get(String(username).trim()) as UserRow | undefined;
   if (!user) {
     bcrypt.compareSync(String(password), DUMMY_HASH);
     return res.status(401).json({ message: '用户名或密码错误' });
@@ -32,7 +33,7 @@ router.post('/login', (req, res) => {
 router.get('/me', authenticate, (req, res) => {
   const user = db
     .prepare('SELECT id, username, name, role, created_at FROM users WHERE id = ?')
-    .get(req.user.id);
+    .get(req.user.id) as Omit<UserRow, 'password_hash'> | undefined;
   if (!user) return res.status(401).json({ message: '用户不存在' });
   res.json({ user });
 });
@@ -46,7 +47,9 @@ router.put('/password', authenticate, (req, res) => {
   if (String(newPassword).length < 6) {
     return res.status(400).json({ message: '新密码至少 6 位' });
   }
-  const row = db.prepare('SELECT password_hash FROM users WHERE id = ?').get(req.user.id);
+  const row = db.prepare('SELECT password_hash FROM users WHERE id = ?').get(req.user.id) as
+    | { password_hash: string }
+    | undefined;
   if (!row || !bcrypt.compareSync(String(oldPassword), row.password_hash)) {
     return res.status(400).json({ message: '原密码错误' });
   }
@@ -64,15 +67,19 @@ router.post('/password/reset', (req, res) => {
     return res.status(400).json({ message: '新密码至少 6 位' });
   }
 
-  const user = db.prepare('SELECT id FROM users WHERE username = ?').get(String(username).trim());
+  const user = db.prepare('SELECT id FROM users WHERE username = ?').get(String(username).trim()) as
+    | { id: number }
+    | undefined;
   const tokenHash = crypto.createHash('sha256').update(String(resetCode).trim().toUpperCase()).digest('hex');
   const token = user
-    ? db.prepare(
-        `SELECT id FROM password_reset_tokens
-         WHERE user_id = ? AND token_hash = ? AND used_at IS NULL AND expires_at > ?
-         ORDER BY id DESC LIMIT 1`
-      ).get(user.id, tokenHash, nowStr())
-    : null;
+    ? (db
+        .prepare(
+          `SELECT id FROM password_reset_tokens
+           WHERE user_id = ? AND token_hash = ? AND used_at IS NULL AND expires_at > ?
+           ORDER BY id DESC LIMIT 1`
+        )
+        .get(user.id, tokenHash, nowStr()) as ResetTokenRow | undefined)
+    : undefined;
   if (!user || !token) {
     return res.status(400).json({ message: '找回码无效或已过期' });
   }

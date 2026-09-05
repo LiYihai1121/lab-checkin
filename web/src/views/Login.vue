@@ -30,10 +30,11 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
+import type { FormInstance, FormRules } from 'element-plus';
 import { User, Lock } from '@element-plus/icons-vue';
 import request from '../api/request';
 import { safeRedirect } from '../utils/security';
@@ -43,18 +44,23 @@ import BrandLogo from '../components/BrandLogo.vue';
 const router = useRouter();
 const route = useRoute();
 const store = useUserStore();
-const formRef = ref();
+const formRef = ref<FormInstance>();
 const loading = ref(false);
 const form = reactive({ username: '', password: '' });
-const rules = {
+const rules: FormRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
 };
 
 // 真实健康探活（fetch 直连，避免走 axios 拦截器的错误弹窗）
-const health = ref('checking');
+const health = ref<'checking' | 'ok' | 'down'>('checking');
 const healthText = computed(
-  () => ({ checking: '正在连接服务…', ok: '系统运行中 · 数据实时同步', down: '服务连接异常，请稍后重试' })[health.value]
+  () =>
+    ({
+      checking: '正在连接服务…',
+      ok: '系统运行中 · 数据实时同步',
+      down: '服务连接异常，请稍后重试'
+    })[health.value]
 );
 onMounted(async () => {
   try {
@@ -66,7 +72,7 @@ onMounted(async () => {
 });
 
 async function onSubmit() {
-  const valid = await formRef.value.validate().catch(() => false);
+  const valid = await formRef.value?.validate().catch(() => false);
   if (!valid) return;
   loading.value = true;
   try {

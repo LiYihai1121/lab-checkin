@@ -1,16 +1,17 @@
 import express from 'express';
+import type { ErrorRequestHandler } from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import path from 'node:path';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import './db/database.js';
-import authRoutes from './routes/auth.js';
-import userRoutes from './routes/users.js';
-import qrcodeRoutes from './routes/qrcode.js';
-import checkinRoutes from './routes/checkin.js';
-import recordRoutes from './routes/records.js';
-import statsRoutes from './routes/stats.js';
+import './db/database.ts';
+import authRoutes from './routes/auth.ts';
+import userRoutes from './routes/users.ts';
+import qrcodeRoutes from './routes/qrcode.ts';
+import checkinRoutes from './routes/checkin.ts';
+import recordRoutes from './routes/records.ts';
+import statsRoutes from './routes/stats.ts';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -43,7 +44,7 @@ const checkinLimiter = rateLimit({
   message: { message: '操作过于频繁，请稍后再试' }
 });
 
-const allowedOrigins = process.env.CORS_ORIGIN
+const allowedOrigins: string[] | true = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim()).filter(Boolean)
   : true;
 app.use(cors({ origin: allowedOrigins }));
@@ -78,13 +79,14 @@ if (existsSync(path.join(webDistDir, 'index.html'))) {
 app.use((req, res) => res.status(404).json({ message: '接口不存在' }));
 
 // eslint-disable-next-line no-unused-vars
-app.use((err, req, res, next) => {
+const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
   console.error(err);
   if (err.type === 'entity.parse.failed' || err.status === 400) {
     return res.status(400).json({ message: '请求格式错误' });
   }
   res.status(500).json({ message: '服务器内部错误' });
-});
+};
+app.use(errorHandler);
 
 const server = app.listen(PORT, () => {
   console.info(`实验室签到系统后端已启动: http://localhost:${PORT}`);
@@ -98,13 +100,14 @@ const server = app.listen(PORT, () => {
 
 // 端口被占用（如 --watch 重启时旧实例尚未退出）时给出明确原因而非裸堆栈
 server.on('error', (err) => {
+  const errno = err as NodeJS.ErrnoException;
   console.error(
-    `[启动失败] ${err.code === 'EADDRINUSE' ? `端口 ${PORT} 已被占用，可能有旧实例尚未退出` : err.message}`
+    `[启动失败] ${errno.code === 'EADDRINUSE' ? `端口 ${PORT} 已被占用，可能有旧实例尚未退出` : errno.message}`
   );
   process.exit(1);
 });
 
-function shutdown(signal) {
+function shutdown(signal: string): void {
   console.info(`[shutdown] 收到 ${signal}，正在停止服务...`);
   // keep-alive 连接与调试器等待会挂住退出流程，导致 --watch 重启时端口无法释放：
   // 立即断开全部连接并限时兜底退出

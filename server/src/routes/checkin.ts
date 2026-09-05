@@ -1,13 +1,14 @@
 import { Router } from 'express';
-import db, { nowStr } from '../db/database.js';
-import { isUniqueConstraintError } from '../utils/helpers.js';
-import { authenticate } from '../middleware/auth.js';
+import db, { nowStr } from '../db/database.ts';
+import { isUniqueConstraintError } from '../utils/helpers.ts';
+import { authenticate } from '../middleware/auth.ts';
+import type { CheckinRecordRow } from '../types.ts';
 
 const router = Router();
 router.use(authenticate);
 
 /** 解析本地时间字符串为时间戳 */
-function ts(str) {
+function ts(str: string): number {
   return new Date(String(str).replace(' ', 'T')).getTime();
 }
 
@@ -20,14 +21,14 @@ router.get('/status', (req, res) => {
        WHERE r.user_id = ? AND r.status = 'checked_in'
        ORDER BY r.id DESC LIMIT 1`
     )
-    .get(req.user.id);
+    .get(req.user.id) as (CheckinRecordRow & { name: string; username: string }) | undefined;
   const todayStr = nowStr().slice(0, 10);
   const stats = db
     .prepare(
       `SELECT COUNT(*) AS sessions, COALESCE(SUM(duration_minutes), 0) AS minutes
        FROM checkin_records WHERE user_id = ? AND checkin_time >= ?`
     )
-    .get(req.user.id, `${todayStr} 00:00:00`);
+    .get(req.user.id, `${todayStr} 00:00:00`) as { sessions: number; minutes: number };
   res.json({ active: active || null, todaySessions: stats.sessions, todayMinutes: stats.minutes });
 });
 
@@ -36,21 +37,20 @@ router.post('/in', (req, res) => {
   const code = String(req.body?.code || '').trim().toUpperCase();
   if (!code) return res.status(400).json({ message: '请输入签到码' });
 
-  const codeRow = db
-    .prepare('SELECT * FROM checkin_codes WHERE code = ? AND expires_at > ?')
-    .get(code, nowStr());
+  // [INJECT-CODE-QUERY]
+  const codeStmt = db.prepare('SELECT * FROM checkin_codes WHERE code = ? AND expires_at > ?');
+  const codeRow = codeStmt.get(code, nowStr()) as { id: number } | undefined;
   if (!codeRow) {
     return res.status(400).json({ message: '签到码无效或已过期，请联系管理员' });
   }
-
-  const active = db
-    .prepare("SELECT id FROM checkin_records WHERE user_id = ? AND status = 'checked_in'")
-    .get(req.user.id);
+  // [INJECT-ACTIVE-QUERY]
+  const activeStmt = db.prepare("SELECT id FROM checkin_records WHERE user_id = ? AND status = 'checked_in'");
+  const active = activeStmt.get(req.user.id) as { id: number } | undefined;
   if (active) {
     return res.status(400).json({ message: '您已处于签到状态，请先签退' });
   }
 
-  let result;
+  let result: { changes: number | bigint; lastInsertRowid: number | bigint };
   try {
     result = db
       .prepare(
@@ -64,7 +64,9 @@ router.post('/in', (req, res) => {
     }
     throw err;
   }
-  const record = db.prepare('SELECT * FROM checkin_records WHERE id = ?').all(Number(result.lastInsertRowid))[0];
+  const record = db.prepare('SELECT * FROM checkin_records WHERE id = ?').all(Number(result.lastInsertRowid))[0] as
+    | CheckinRecordRow
+    | undefined;
   res.json({ message: '签到成功', record });
 });
 
@@ -72,7 +74,7 @@ router.post('/in', (req, res) => {
 router.post('/out', (req, res) => {
   const active = db
     .prepare("SELECT * FROM checkin_records WHERE user_id = ? AND status = 'checked_in' ORDER BY id DESC LIMIT 1")
-    .get(req.user.id);
+    .get(req.user.id) as CheckinRecordRow | undefined;
   if (!active) {
     return res.status(400).json({ message: '当前没有进行中的签到' });
   }
@@ -87,7 +89,7 @@ router.post('/out', (req, res) => {
   if (info.changes === 0) {
     return res.status(400).json({ message: '当前没有进行中的签到' });
   }
-  const record = db.prepare('SELECT * FROM checkin_records WHERE id = ?').all(active.id)[0];
+  const record = db.prepare('SELECT * FROM checkin_records WHERE id = ?').all(active.id)[0] as CheckinRecordRow;
   res.json({ message: `签退成功，本次共 ${durationMinutes} 分钟`, record });
 });
 

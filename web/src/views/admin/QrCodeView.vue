@@ -29,7 +29,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import QRCode from 'qrcode';
 import { Refresh } from '@element-plus/icons-vue';
@@ -41,7 +41,7 @@ const remain = ref(0);
 const autoRefresh = ref(true);
 const loading = ref(false);
 const errorMessage = ref('');
-let timer;
+let timer: ReturnType<typeof setInterval> | undefined;
 let failCount = 0;
 let retryAfter = 0;
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import crypto from 'node:crypto';
 import request from 'supertest';
-import { makeApp } from './helpers.js';
+import { makeApp } from './helpers.ts';
 
 const app = makeApp();
 
@@ -9,9 +9,9 @@ const INIT_ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const STU_PASSWORD = crypto.randomBytes(8).toString('hex');
 
 describe('users admin API', () => {
-  let adminToken;
-  let studentToken;
-  let studentId;
+  let adminToken: string;
+  let studentToken: string;
+  let studentId: number;
 
   beforeAll(async () => {
     const login = await request(app)
@@ -72,7 +72,7 @@ describe('users admin API', () => {
     const list = await request(app)
       .get('/api/users?keyword=admin')
       .set('Authorization', `Bearer ${adminToken}`);
-    const adminRow = list.body.list.find((u) => u.username === 'admin');
+    const adminRow = list.body.list.find((u: { username: string }) => u.username === 'admin');
     const res = await request(app)
       .put(`/api/users/${adminRow.id}`)
       .set('Authorization', `Bearer ${adminToken}`)

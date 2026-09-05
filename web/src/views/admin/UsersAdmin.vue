@@ -68,15 +68,17 @@
   </el-dialog>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { h, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import type { FormInstance, FormRules } from 'element-plus';
 import { Plus, Search } from '@element-plus/icons-vue';
 import request from '../../api/request';
 import { useUserStore } from '../../stores/user';
+import type { UserRow } from '../../types';
 
 const store = useUserStore();
-const list = ref([]);
+const list = ref<UserRow[]>([]);
 const total = ref(0);
 const page = ref(1);
 const pageSize = ref(10);
@@ -84,16 +86,16 @@ const keyword = ref('');
 const tableLoading = ref(false);
 const saving = ref(false);
 const pwdSaving = ref(false);
-const codeLoadingId = ref(null);
+const codeLoadingId = ref<number | null>(null);
 
-const dialogFormRef = ref();
+const dialogFormRef = ref<FormInstance>();
 const dialog = reactive({
   visible: false,
   isEdit: false,
-  id: null,
-  form: { username: '', name: '', role: 'student', password: '' }
+  id: null as number | null,
+  form: { username: '', name: '', role: 'student' as 'student' | 'admin', password: '' }
 });
-const dialogRules = {
+const dialogRules: FormRules = {
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
     { pattern: /^[A-Za-z0-9_]{2,20}$/, message: '用户名需为 2-20 位字母、数字或下划线', trigger: 'blur' }
@@ -105,7 +107,7 @@ const dialogRules = {
     { min: 6, message: '密码至少 6 位', trigger: 'blur' }
   ]
 };
-const pwdDialog = reactive({ visible: false, id: null, password: '' });
+const pwdDialog = reactive({ visible: false, id: null as number | null, password: '' });
 
 async function load(p = page.value) {
   page.value = p;
@@ -128,7 +130,7 @@ function openAdd() {
   dialog.visible = true;
 }
 
-function openEdit(row) {
+function openEdit(row: UserRow) {
   dialog.isEdit = true;
   dialog.id = row.id;
   Object.assign(dialog.form, { username: row.username, name: row.name, role: row.role, password: '' });
@@ -154,7 +156,7 @@ async function onSave() {
   }
 }
 
-function resetPwd(row) {
+function resetPwd(row: UserRow) {
   pwdDialog.id = row.id;
   pwdDialog.password = '';
   pwdDialog.visible = true;
@@ -172,7 +174,7 @@ async function onResetPwd() {
   }
 }
 
-async function issueResetCode(row) {
+async function issueResetCode(row: UserRow) {
   if (codeLoadingId.value) return;
   codeLoadingId.value = row.id;
   try {
@@ -192,7 +194,7 @@ async function issueResetCode(row) {
   }
 }
 
-async function onDelete(row) {
+async function onDelete(row: UserRow) {
   const ok = await ElMessageBox.confirm(`确认删除用户「${row.name}」？其签到记录将一并删除。`, '警告', { type: 'warning' })
     .then(() => true)
     .catch(() => false);

@@ -14,10 +14,8 @@
   </div>
 </template>
 
-<script setup>
-defineProps({
-  compact: Boolean
-});
+<script setup lang="ts">
+defineProps<{ compact?: boolean }>();
 </script>
 
 <style scoped>

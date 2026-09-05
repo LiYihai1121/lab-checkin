@@ -6,7 +6,16 @@ const root = fileURLToPath(new URL('..', import.meta.url))
 const packages = ['server', 'web']
 const semverPattern = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/
 
-const readJson = async (path) => JSON.parse(await readFile(path, 'utf8'))
+interface PackageJson {
+  version?: string
+}
+
+interface LockfileJson {
+  packages?: Record<string, { version?: string }>
+}
+
+const readJson = async (path: string): Promise<PackageJson & LockfileJson> =>
+  JSON.parse(await readFile(path, 'utf8'))
 
 const manifests = await Promise.all(packages.map(async (name) => {
   const packageJson = await readJson(resolve(root, name, 'package.json'))
@@ -14,8 +23,8 @@ const manifests = await Promise.all(packages.map(async (name) => {
   return { name, packageJson, lockfile }
 }))
 
-const versions = new Set()
-const errors = []
+const versions = new Set<string | undefined>()
+const errors: string[] = []
 
 for (const { name, packageJson, lockfile } of manifests) {
   const packageVersion = packageJson.version

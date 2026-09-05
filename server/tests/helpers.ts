@@ -1,10 +1,10 @@
 import express from 'express';
-import authRoutes from '../src/routes/auth.js';
-import userRoutes from '../src/routes/users.js';
-import qrcodeRoutes from '../src/routes/qrcode.js';
-import checkinRoutes from '../src/routes/checkin.js';
-import recordRoutes from '../src/routes/records.js';
-import statsRoutes from '../src/routes/stats.js';
+import authRoutes from '../src/routes/auth.ts';
+import userRoutes from '../src/routes/users.ts';
+import qrcodeRoutes from '../src/routes/qrcode.ts';
+import checkinRoutes from '../src/routes/checkin.ts';
+import recordRoutes from '../src/routes/records.ts';
+import statsRoutes from '../src/routes/stats.ts';
 
 /** 与生产一致的完整 API 应用（不挂载限流，避免测试被 429 干扰） */
 export function makeApp() {

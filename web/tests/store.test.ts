@@ -2,18 +2,18 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
 // 在 node 环境中模拟 localStorage（store 初始化与持久化都依赖它）
-const mem = {};
+const mem: Record<string, string> = {};
 vi.stubGlobal('localStorage', {
-  getItem: (k) => (k in mem ? mem[k] : null),
-  setItem: (k, v) => {
+  getItem: (k: string) => (k in mem ? mem[k] : null),
+  setItem: (k: string, v: string) => {
     mem[k] = String(v);
   },
-  removeItem: (k) => {
+  removeItem: (k: string) => {
     delete mem[k];
   }
 });
 
-const { useUserStore } = await import('../src/stores/user.js');
+const { useUserStore } = await import('../src/stores/user');
 
 describe('useUserStore', () => {
   beforeEach(() => {

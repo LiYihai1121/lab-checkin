@@ -1,11 +1,27 @@
 import axios from 'axios';
+import type { AxiosRequestConfig, AxiosInstance } from 'axios';
 import { ElMessage } from 'element-plus';
 import router from '../router';
 import { useUserStore } from '../stores/user';
 
-const request = axios.create({ baseURL: '/api', timeout: 10000 });
+declare module 'axios' {
+  export interface AxiosRequestConfig {
+    /** silent: true 时由调用方自行处理错误提示（如轮询场景） */
+    silent?: boolean;
+  }
+}
 
-request.interceptors.request.use((config) => {
+/** 响应拦截器统一剥壳后返回响应体，因此按响应体形状对外暴露泛型 */
+interface RequestInstance {
+  get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>;
+  post<T = any>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T>;
+  put<T = any>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T>;
+  delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>;
+}
+
+const instance: AxiosInstance = axios.create({ baseURL: '/api', timeout: 10000 });
+
+instance.interceptors.request.use((config) => {
   const store = useUserStore();
   if (store.token) {
     config.headers.Authorization = `Bearer ${store.token}`;
@@ -16,7 +32,7 @@ request.interceptors.request.use((config) => {
 // 并发请求同时 401 时只提示并跳转一次
 let redirectingToLogin = false;
 
-request.interceptors.response.use(
+instance.interceptors.response.use(
   (res) => res.data,
   (err) => {
     const isNetworkError = !err.response;
@@ -39,5 +55,7 @@ request.interceptors.response.use(
     return Promise.reject(err);
   }
 );
+
+const request = instance as unknown as RequestInstance;
 
 export default request;
