@@ -1,0 +1,19 @@
+#!/bin/sh
+# 提交前质量门禁：按本次暂存的包跑 typecheck + lint（大厂交付规范：不合规范的代码无法进入历史）
+set -e
+
+root="$(git rev-parse --show-toplevel)"
+server_files=$(git diff --cached --name-only --diff-filter=ACMR -- server/ | wc -l)
+web_files=$(git diff --cached --name-only --diff-filter=ACMR -- web/ | wc -l)
+
+if [ "$server_files" -gt 0 ]; then
+  echo "[pre-commit] 检测到 server 变更，运行 typecheck + lint ..."
+  (cd "$root/server" && npm run --silent typecheck && npm run --silent lint)
+fi
+
+if [ "$web_files" -gt 0 ]; then
+  echo "[pre-commit] 检测到 web 变更，运行 typecheck + lint ..."
+  (cd "$root/web" && npm run --silent typecheck && npm run --silent lint)
+fi
+
+echo "[pre-commit] 门禁通过"

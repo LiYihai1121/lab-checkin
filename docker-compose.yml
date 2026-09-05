@@ -1,0 +1,56 @@
+# 三环境交付编排：同一镜像、不同环境配置与数据卷
+#
+# 常用命令：
+#   docker compose --profile test  up -d --build   # 测试环境（宿主 3100 端口）
+#   docker compose --profile prod  up -d --build   # 生产环境（宿主 3000 端口，须先 export JWT_SECRET=...）
+#   docker compose --profile test down             # 停止并移除（数据保留在命名卷中）
+#
+# 环境标识一览：
+#   测试：/api/health 返回 environment=test，页面标题与界面带「测试环境」徽标
+#   生产：/api/health 返回 environment=production，界面无环境徽标
+
+services:
+  lab-checkin-test:
+    profiles: ['test']
+    image: lab-checkin:local
+    build:
+      context: .
+    environment:
+      NODE_ENV: test
+    ports:
+      - '3100:3100'
+    volumes:
+      - lab-checkin-test-data:/app/server/data
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3100/api/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  lab-checkin-prod:
+    profiles: ['prod']
+    image: lab-checkin:local
+    build:
+      context: .
+    environment:
+      NODE_ENV: production
+      # 生产启动强制校验密钥：未设置时容器拒绝启动（compose 也会在启动前报错）
+      JWT_SECRET: ${JWT_SECRET:?请先在环境中设置 JWT_SECRET}
+      # 可选：CORS_ORIGIN / TRUST_PROXY / CREATE_DEFAULT_ADMIN / ADMIN_PASSWORD 按需追加
+    ports:
+      - '3000:3000'
+    volumes:
+      - lab-checkin-prod-data:/app/server/data
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3000/api/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  lab-checkin-test-data:
+  lab-checkin-prod-data:

@@ -174,6 +174,30 @@ cd server && npm test   # 后端集成测试（独立内存库，不影响开发
 cd web && npm test      # 前端测试
 ```
 
+## 代码质量与提交规范（交付门禁）
+
+双包均提供统一的质量命令，CI（[.github/workflows/ci.yml](.github/workflows/ci.yml)）在 push/PR 时执行同样的门禁：
+
+```bash
+cd server && npm run lint && npm run typecheck && npm test
+cd web    && npm run lint && npm run typecheck && npm test && npm run build
+```
+
+启用本地 Git 提交钩子（克隆后执行一次即可）：`npm run` 之外用 `git config core.hooksPath .githooks`。
+
+- **pre-commit**：本次提交涉及哪个包，就自动跑该包的 typecheck + lint，不通过则拒绝提交
+- **commit-msg**：提交信息必须符合 Conventional Commits（`feat/fix/chore/refactor/style/docs/test/perf/ci/build/revert`），如 `feat(auth): 支持手机号登录`
+- 代码格式由根目录 [.prettierrc.json](.prettierrc.json) 统一（`npx prettier --check .` 校验，`npm run format` 修复），显著变更记录在 [CHANGELOG.md](CHANGELOG.md)
+
+## 交付流程（开发 → 测试 → 生产）
+
+1. **开发**：`npm run dev`（前后端并行，5173→3000），完成编码后跑双包质量门禁
+2. **测试**：`npm run dev:test`（5174→3100，独立测试库）联调验收；CI 同步执行 lint/测试/双环境构建
+3. **发布**：合并到 `main` 后统一构建生产产物并部署，方式二选一：
+   - 裸机/Nginx：`npm run build` + `npm start`（见下）
+   - 容器：`docker compose --profile prod up -d --build`（见下）
+4. **回滚**：容器部署按镜像版本回退；数据卷独立于容器生命周期，回滚不影响数据
+
 ## 生产部署
 
 ```bash
@@ -209,3 +233,20 @@ docker run -d -p 3000:3000 \
 ```
 
 SQLite 数据库位于容器内 `/app/server/data`，建议像上面这样挂载卷持久化；`NODE_ENV=production` 已在镜像内设置。
+
+### Docker Compose 三环境编排
+
+[docker-compose.yml](docker-compose.yml) 用同一镜像、不同环境配置与数据卷编排测试/生产两套部署，均带 `/api/health` 健康自检：
+
+```bash
+# 测试环境（宿主 3100 端口，environment=test，独立测试数据卷）
+docker compose --profile test up -d --build
+
+# 生产环境（宿主 3000 端口，未设置 JWT_SECRET 时拒绝启动）
+export JWT_SECRET=你的随机密钥
+docker compose --profile prod up -d --build
+
+docker compose --profile test down   # 停止（数据保留在命名卷中）
+```
+
+两套环境互不串库（`lab-checkin-test-data` / `lab-checkin-prod-data`），通过 `/api/health` 返回的 `environment` 字段即可确认当前运行环境。

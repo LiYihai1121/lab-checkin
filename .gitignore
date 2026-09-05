@@ -25,6 +25,7 @@ web/.env.*.local
 
 # tooling local state
 .mimosa/
+.zcode/
 coverage/
 gui-test-screenshots/
 

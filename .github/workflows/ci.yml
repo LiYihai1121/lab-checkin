@@ -4,20 +4,11 @@ on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
 
 jobs:
-  version:
-    name: 版本一致性检查
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - run: node scripts/check-version.mjs
-
   server:
-    name: 后端（语法检查 + 测试）
+    name: 后端质量门禁
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -29,14 +20,17 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: server/package-lock.json
-      - run: npm ci
-      - name: 语法检查
-        run: find src tests -name '*.js' -print0 | xargs -0 -n1 node --check
-      - name: 单元与集成测试
+      - name: 安装依赖
+        run: npm ci
+      - name: 类型检查
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: 单元/集成测试
         run: npm test
 
   web:
-    name: 前端（测试 + 构建）
+    name: 前端质量门禁
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -48,8 +42,26 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: web/package-lock.json
-      - run: npm ci
+      - name: 安装依赖
+        run: npm ci
+      - name: 类型检查
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
       - name: 单元测试
         run: npm test
       - name: 生产构建
         run: npm run build
+      - name: 测试环境构建
+        run: npm run build:test
+
+  version:
+    name: 版本一致性检查
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: server/web 版本必须一致
+        run: node scripts/check-version.ts

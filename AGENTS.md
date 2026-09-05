@@ -13,7 +13,8 @@
 - Backend production: from `server/`, run `npm start`.
 - Frontend development: `cd web` then `npm install` and `npm run dev`.
 - Frontend verification/build: from `web/`, run `npm run build`.
-- Both packages define `npm test` (Vitest, one-shot run) and `npm run typecheck` (`tsc --noEmit` / `vue-tsc --noEmit`). Backend integration tests live in `server/tests/` and run against an in-memory SQLite database via `tests/setup.ts` (`DB_PATH=:memory:`); never point them at the real database under `server/data/`. Neither package has a lint script.
+- Both packages define `npm test` (Vitest, one-shot run), `npm run typecheck`, `npm run lint`, and `npm run lint:fix`. Backend integration tests live in `server/tests/` and run against an in-memory SQLite database via `tests/setup.ts` (`DB_PATH=:memory:`); never point them at the real database under `server/data/`.
+- Code style is enforced by Prettier (root `.prettierrc.json`) and ESLint per package. Local git hooks (typecheck + lint pre-commit, Conventional Commits commit-msg) live in `.githooks/`; activate with `git config core.hooksPath .githooks` after cloning. CI runs the same gates on push/PR.
 - Node.js 22.18 or newer is required: the backend uses Node's built-in `node:sqlite` and runs `.ts` files directly via native type stripping (`node src/index.ts`). Only erasable TS syntax is allowed on the server (no enums, namespaces, or parameter properties). Do not add a separate SQLite service or driver without a concrete compatibility reason.
 
 ## Change conventions
