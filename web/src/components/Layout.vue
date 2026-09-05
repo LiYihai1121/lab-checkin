@@ -20,7 +20,7 @@
     <el-container>
       <el-header class="header">
         <div class="header-heading">
-          <div class="kicker">LAB CHECK-IN / {{ store.isAdmin ? 'ADMIN' : 'STUDENT' }}</div>
+          <div class="kicker">LABTRACE / {{ store.isAdmin ? 'ADMIN' : 'STUDENT' }}</div>
           <span class="title">{{ $route.meta.title || '' }}</span>
           <el-tag v-if="!appEnv.isProduction" :type="appEnv.tag" size="small" effect="plain" class="env-tag">
             {{ appEnv.label }}

@@ -1,4 +1,4 @@
-# 实验室签到系统
+# LabTrace · 电子实验室签到系统
 
 项目架构说明见 [ARCHITECTURE.md](ARCHITECTURE.md)。
 
@@ -64,7 +64,7 @@ npm run dev
 ## 项目结构
 
 ```text
-lab-checkin/
+lab-trace/
 ├── server/                  # 后端
 │   ├── data/                # SQLite 数据库文件（自动创建）
 │   ├── tests/               # Vitest 集成测试（内存库，不污染开发库）
@@ -142,7 +142,7 @@ lab-checkin/
 
 环境标识区分方式：
 
-- **页面标题**：开发/测试构建为 `实验室签到系统（开发/测试环境）`，生产为 `实验室签到系统`
+- **页面标题**：开发/测试构建为 `电子实验室签到系统（开发/测试环境）`，生产为 `电子实验室签到系统`
 - **界面徽标**：开发（橙色）/测试（红色）构建在页头与登录页显示环境标签，生产不显示
 - **`/api/health`**：返回 `environment`（development/test/production）、`environmentLabel` 与 `version` 字段
 - **构建产物**：生产 `web/dist`、测试 `web/dist-test`、开发 `web/dist-dev`，避免误部署
@@ -224,12 +224,12 @@ JWT_SECRET=你的随机密钥 CORS_ORIGIN=https://lab.example.com npm start
 仓库根目录提供 [Dockerfile](Dockerfile)：多阶段构建前端产物，由 Express 同源托管 `/api` 与静态资源，无需额外反向代理。
 
 ```bash
-docker build -t lab-checkin .
+docker build -t lab-trace .
 docker run -d -p 3000:3000 \
   -e JWT_SECRET=你的随机密钥 \
   -e CREATE_DEFAULT_ADMIN=false \
-  -v lab-checkin-data:/app/server/data \
-  --name lab-checkin lab-checkin
+  -v lab-trace-data:/app/server/data \
+  --name lab-trace lab-trace
 ```
 
 SQLite 数据库位于容器内 `/app/server/data`，建议像上面这样挂载卷持久化；`NODE_ENV=production` 已在镜像内设置。
@@ -249,4 +249,4 @@ docker compose --profile prod up -d --build
 docker compose --profile test down   # 停止（数据保留在命名卷中）
 ```
 
-两套环境互不串库（`lab-checkin-test-data` / `lab-checkin-prod-data`），通过 `/api/health` 返回的 `environment` 字段即可确认当前运行环境。
+两套环境互不串库（`lab-trace-test-data` / `lab-trace-prod-data`），通过 `/api/health` 返回的 `environment` 字段即可确认当前运行环境。

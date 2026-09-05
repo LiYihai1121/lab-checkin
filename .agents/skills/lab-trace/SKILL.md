@@ -1,9 +1,9 @@
 ---
-name: lab-checkin
-description: 实验室签到系统开发助手。Use whenever the user works on the lab-checkin repository, asks about the check-in/check-out system, or needs to change, debug, test, or deploy this Vue 3 + Express + SQLite project. This is the overview skill with global conventions — module-level work should also load the matching skill (backend / frontend / testing / security / delivery).
+name: lab-trace
+description: LabTrace 电子实验室签到系统开发助手。Use whenever the user works on the lab-trace repository, asks about the check-in/check-out system, or needs to change, debug, test, or deploy this Vue 3 + Express + SQLite project. This is the overview skill with global conventions — module-level work should also load the matching skill (backend / frontend / testing / security / delivery).
 ---
 
-# lab-checkin 项目开发指南
+# LabTrace 项目开发指南
 
 Vue 3 + Vite 前端与 Express + SQLite 后端组成的 TypeScript 实验室签到签退管理系统。前后端是两个独立 Node.js 包（全部 `.ts` 与 `lang="ts"` SFC，strict 模式），无根级 `package.json`。
 
@@ -13,16 +13,16 @@ Vue 3 + Vite 前端与 Express + SQLite 后端组成的 TypeScript 实验室签�
 
 | 模块 | Skill | 触发场景 |
 |------|-------|----------|
-| 后端 API / 数据库 | `lab-checkin-backend` | 路由、中间件、SQL、建表、后端报错与钩子误报 |
-| 前端页面 | `lab-checkin-frontend` | Vue 组件、路由、store、请求层、构建与环境标识 |
-| 测试 | `lab-checkin-testing` | 写/跑/修测试，TDD 流程，测试失败排查 |
-| 安全 | `lab-checkin-security` | 认证、密钥、找回码、限流、发布前安全自查 |
-| 交付部署 | `lab-checkin-delivery` | 部署、发布、回滚、Docker/Compose、CI、版本 |
+| 后端 API / 数据库 | `lab-trace-backend` | 路由、中间件、SQL、建表、后端报错与钩子误报 |
+| 前端页面 | `lab-trace-frontend` | Vue 组件、路由、store、请求层、构建与环境标识 |
+| 测试 | `lab-trace-testing` | 写/跑/修测试，TDD 流程，测试失败排查 |
+| 安全 | `lab-trace-security` | 认证、密钥、找回码、限流、发布前安全自查 |
+| 交付部署 | `lab-trace-delivery` | 部署、发布、回滚、Docker/Compose、CI、版本 |
 
 ## 1. 项目结构速查
 
 ```text
-lab-checkin/
+lab-trace/
 ├── server/                          # 后端（Express API）
 │   ├── src/
 │   │   ├── index.ts                 # 入口：CORS、限流、静态托管、路由注册
@@ -131,4 +131,4 @@ cd web    && npm run typecheck && npm run lint && npm test && npm run build
 - 不把签到码验证逻辑放到客户端；动态码必须由服务端校验。
 - 不提交有密钥的环境文件；`.agents/`、`.zcode/` 等本地工具目录不放入 git。
 - 不按名称批量结束 `node.exe` 进程；停止进程按精确 PID 处理。
-- 部署、发布、回滚、容器编排细节见 lab-checkin-delivery skill。
+- 部署、发布、回滚、容器编排细节见 lab-trace-delivery skill。

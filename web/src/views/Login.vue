@@ -3,7 +3,7 @@
     <div class="login-shell">
       <section class="brand-panel">
         <BrandLogo />
-        <div class="eyebrow">LAB CHECK-IN SYSTEM</div>
+        <div class="eyebrow">LABTRACE · CHECK-IN SYSTEM</div>
         <h1>每一次进入，<br /><em>都有迹可循。</em></h1>
         <p>让实验室出入更清晰，让每一分钟投入都被准确记录。</p>
         <div class="brand-foot">

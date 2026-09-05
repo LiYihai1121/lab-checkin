@@ -19,21 +19,21 @@ const ENVIRONMENTS: Record<string, AppEnvMeta> = {
     label: '开发环境',
     tag: 'warning',
     isProduction: false,
-    baseTitle: '实验室签到系统（开发环境）',
+    baseTitle: '电子实验室签到系统（开发环境）',
   },
   test: {
     name: 'test',
     label: '测试环境',
     tag: 'danger',
     isProduction: false,
-    baseTitle: '实验室签到系统（测试环境）',
+    baseTitle: '电子实验室签到系统（测试环境）',
   },
   production: {
     name: 'production',
     label: '生产环境',
     tag: 'success',
     isProduction: true,
-    baseTitle: '实验室签到系统',
+    baseTitle: '电子实验室签到系统',
   },
 };
 
@@ -46,7 +46,7 @@ export function applyEnvIdentity(): void {
   document.title = appEnv.baseTitle;
   if (!appEnv.isProduction) {
     console.info(
-      `%c[实验室签到系统] 当前为${appEnv.label}构建，请勿用于真实数据`,
+      `%c[LabTrace] 当前为${appEnv.label}构建，请勿用于真实数据`,
       'background:#163d3d;color:#f4c95d;padding:2px 8px;border-radius:4px;font-weight:600',
     );
   }

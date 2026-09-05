@@ -9,7 +9,7 @@
     </span>
     <span class="logo-copy">
       <strong>电子实验室</strong>
-      <small v-if="!compact">E-LAB CHECK-IN</small>
+      <small v-if="!compact">LABTRACE</small>
     </span>
   </div>
 </template>

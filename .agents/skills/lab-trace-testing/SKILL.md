@@ -1,6 +1,6 @@
 ---
-name: lab-checkin-testing
-description: lab-checkin 测试模块指南。Use when writing, running, debugging, or fixing tests in this repository — server Vitest integration tests, web Vitest unit tests, TDD workflows, coverage of new APIs or pages, or when tests fail unexpectedly. Covers the in-memory SQLite isolation model and the test-helper patterns.
+name: lab-trace-testing
+description: lab-trace 测试模块指南。Use when writing, running, debugging, or fixing tests in this repository — server Vitest integration tests, web Vitest unit tests, TDD workflows, coverage of new APIs or pages, or when tests fail unexpectedly. Covers the in-memory SQLite isolation model and the test-helper patterns.
 ---
 
 # 测试模块指南（server/tests 与 web/tests）

@@ -1,9 +1,9 @@
 ---
-name: lab-checkin-security
-description: lab-checkin 安全审查与安全修改指南。Use when touching auth, passwords, tokens, reset codes, rate limiting, CORS, or any user-input handling in this repository, when reviewing code for security issues before release, or when the Mimosa security hook reports a finding that needs triage. Covers the auth boundary, secret management, injection surfaces, and the pre-release security checklist.
+name: lab-trace-security
+description: lab-trace 安全审查与安全修改指南。Use when touching auth, passwords, tokens, reset codes, rate limiting, CORS, or any user-input handling in this repository, when reviewing code for security issues before release, or when the Mimosa security hook reports a finding that needs triage. Covers the auth boundary, secret management, injection surfaces, and the pre-release security checklist.
 ---
 
-# 安全模块指南（lab-checkin）
+# 安全模块指南（lab-trace）
 
 借鉴业界 security-review / 对抗式审查实践：安全改动**先列威胁面再动手**，发布前过一遍自查清单。
 
@@ -44,8 +44,8 @@ description: lab-checkin 安全审查与安全修改指南。Use when touching a
 - [ ] 日志中无密码、token、找回码、Cookie
 - [ ] 生产环境变量齐全：JWT_SECRET（强随机）、CORS_ORIGIN、CREATE_DEFAULT_ADMIN=false（首启建号后）
 - [ ] 限流对新敏感接口同样挂载
-- [ ] `npm audit` 无 high/critical；Mimosa 深度扫描通过（钩子误报按 lab-checkin-backend 第 4 节 triage）
+- [ ] `npm audit` 无 high/critical；Mimosa 深度扫描通过（钩子误报按 lab-trace-backend 第 4 节 triage）
 
 ## 5. Mimosa 钩子处置
 
-扫描钩子（PreToolUse）拦截常见误报：SQL `.get()` 判 SSRF、`db.exec` 判注入、测试口令判硬编码凭据。先按 lab-checkin-backend 第 4 节的写法规避/分步重试；确属误报时向用户说明依据，**不要为通过钩子改变运行时安全语义**。git commit/push 时 `scanner_enobufs / library_source` 提示为兼容策略放行，不代表已通过完整审计——正式结论需单独跑完整深度扫描。
+扫描钩子（PreToolUse）拦截常见误报：SQL `.get()` 判 SSRF、`db.exec` 判注入、测试口令判硬编码凭据。先按 lab-trace-backend 第 4 节的写法规避/分步重试；确属误报时向用户说明依据，**不要为通过钩子改变运行时安全语义**。git commit/push 时 `scanner_enobufs / library_source` 提示为兼容策略放行，不代表已通过完整审计——正式结论需单独跑完整深度扫描。

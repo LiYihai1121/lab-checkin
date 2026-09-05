@@ -1,9 +1,9 @@
 ---
-name: lab-checkin-delivery
-description: lab-checkin 项目交付部署指南。Use when the user asks to deploy, release, publish, ship, or roll back the lab-checkin project, or asks about Docker / docker-compose / CI / 版本发布 / 上线 / 回滚 / 构建产物 for this repository. Covers the three-environment delivery pipeline, quality gates, container orchestration, and versioning.
+name: lab-trace-delivery
+description: lab-trace 项目交付部署指南。Use when the user asks to deploy, release, publish, ship, or roll back the lab-trace project, or asks about Docker / docker-compose / CI / 版本发布 / 上线 / 回滚 / 构建产物 for this repository. Covers the three-environment delivery pipeline, quality gates, container orchestration, and versioning.
 ---
 
-# lab-checkin 交付部署指南
+# lab-trace 交付部署指南
 
 三大环境（开发 / 测试 / 生产）的交付流水线、质量门禁、容器编排与版本发布规范。
 
@@ -20,7 +20,7 @@ description: lab-checkin 项目交付部署指南。Use when the user asks to de
 
 可区分标识（防止误操作环境）：
 
-- 页面标题后缀：开发/测试为 `实验室签到系统（开发/测试环境）`，生产无后缀
+- 页面标题后缀：开发/测试为 `电子实验室签到系统（开发/测试环境）`，生产无后缀
 - 界面徽标：开发（橙）/ 测试（红）在页头与登录页显示，生产不显示
 - `GET /api/health` 返回 `{ status, service, environment, environmentLabel, version, timestamp }`
 - 后端启动日志以 `[环境] 开发环境/测试环境/生产环境（NODE_ENV=…）| 版本 v…` 开头
@@ -46,14 +46,14 @@ cd web && npm run build:test   # 测试 → web/dist-test
 
 ### 镜像发布（GHCR）
 
-镜像由 `.github/workflows/release.yml` 自动构建：push `v*` tag 或手动 dispatch（`gh workflow run release.yml -f tag=vX.Y.Z`）触发，发布到 `ghcr.io/liyihai1121/lab-checkin`（tag 号 + latest），构建后 CI 内做容器冒烟验收——`/api/health` 必须返回 `environment=production` 且 `version` 与 tag 一致。本机无 Docker 时走此通道；部署机直接 `docker compose --profile prod up -d`（会拉取 GHCR 镜像时需将 compose 的 build 改为 image 引用，或继续本地 build）。
+镜像由 `.github/workflows/release.yml` 自动构建：push `v*` tag 或手动 dispatch（`gh workflow run release.yml -f tag=vX.Y.Z`）触发，发布到 `ghcr.io/liyihai1121/lab-trace`（tag 号 + latest），构建后 CI 内做容器冒烟验收——`/api/health` 必须返回 `environment=production` 且 `version` 与 tag 一致。本机无 Docker 时走此通道；部署机直接 `docker compose --profile prod up -d`（会拉取 GHCR 镜像时需将 compose 的 build 改为 image 引用，或继续本地 build）。
 
 ## 4. 部署方式
 
 ### 方式一：Docker Compose（推荐，三环境编排见 docker-compose.yml）
 
 ```bash
-# 测试环境：宿主 3100 端口，environment=test，独立数据卷 lab-checkin-test-data
+# 测试环境：宿主 3100 端口，environment=test，独立数据卷 lab-trace-test-data
 docker compose --profile test up -d --build
 
 # 生产环境：宿主 3000 端口；未设置 JWT_SECRET 时 compose 直接报错拒绝启动
@@ -63,17 +63,17 @@ docker compose --profile prod up -d --build
 docker compose --profile test down   # 停止（数据保留在命名卷）
 ```
 
-- 同一镜像（`lab-checkin:local`），环境差异只在 compose 的 `environment` 与数据卷
+- 同一镜像（`lab-trace:local`），环境差异只在 compose 的 `environment` 与数据卷
 - 两套环境自带 `/api/health` 健康自检（wget 探活，30s 间隔）
 - 可追加 `CORS_ORIGIN` / `TRUST_PROXY` / `CREATE_DEFAULT_ADMIN` / `ADMIN_PASSWORD`
 
 ### 方式二：Docker 单容器（docker build）
 
 ```bash
-docker build -t lab-checkin .
+docker build -t lab-trace .
 docker run -d -p 3000:3000 -e JWT_SECRET=强随机密钥 \
-  -e CREATE_DEFAULT_ADMIN=false -v lab-checkin-data:/app/server/data \
-  --name lab-checkin lab-checkin
+  -e CREATE_DEFAULT_ADMIN=false -v lab-trace-data:/app/server/data \
+  --name lab-trace lab-trace
 ```
 
 镜像内已设 `NODE_ENV=production`；入口 `node src/index.ts`（Node 24 原生类型剥离）。

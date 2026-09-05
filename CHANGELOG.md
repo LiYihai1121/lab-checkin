@@ -4,9 +4,13 @@
 
 ## [Unreleased]
 
+### Changed
+
+- 项目更名为 **LabTrace**：GitHub 仓库 `lab-checkin` → `lab-trace`，双包更名 `lab-trace-server` / `lab-trace-web`，镜像路径迁移至 `ghcr.io/liyihai1121/lab-trace`，界面品牌（Logo/kicker/标题）与全部文档同步更新；SQLite 默认数据文件名保持 `lab-checkin.db` 不变，避免存量数据迁移
+
 ### Added
 
-- 镜像发布流水线 `release.yml`：push `v*` tag 或手动触发时构建镜像并推送 GHCR（`ghcr.io/liyihai1121/lab-checkin`，tag 号 + latest），CI 内完成容器冒烟验收（`/api/health` 的 environment/version 与 tag 一致性断言）
+- 镜像发布流水线 `release.yml`：push `v*` tag 或手动触发时构建镜像并推送 GHCR（`ghcr.io/liyihai1121/lab-trace`，tag 号 + latest），CI 内完成容器冒烟验收（`/api/health` 的 environment/version 与 tag 一致性断言）
 
 ## [1.1.0] - 2026-09-06
 

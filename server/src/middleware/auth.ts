@@ -8,7 +8,7 @@ import type { AuthUser } from '../types.ts';
 if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
   throw new Error('生产环境必须设置 JWT_SECRET 环境变量');
 }
-const JWT_SECRET = process.env.JWT_SECRET || 'lab-checkin-dev-secret-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET || 'lab-trace-dev-secret-change-in-production';
 const TOKEN_TTL: SignOptions['expiresIn'] = '24h';
 
 /** 签发 JWT：payload 为用户基本信息 */

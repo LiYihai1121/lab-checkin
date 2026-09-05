@@ -10,9 +10,9 @@
 #   生产：/api/health 返回 environment=production，界面无环境徽标
 
 services:
-  lab-checkin-test:
+  lab-trace-test:
     profiles: ['test']
-    image: lab-checkin:local
+    image: lab-trace:local
     build:
       context: .
     environment:
@@ -20,7 +20,7 @@ services:
     ports:
       - '3100:3100'
     volumes:
-      - lab-checkin-test-data:/app/server/data
+      - lab-trace-test-data:/app/server/data
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3100/api/health']
       interval: 30s
@@ -29,9 +29,9 @@ services:
       start_period: 10s
     restart: unless-stopped
 
-  lab-checkin-prod:
+  lab-trace-prod:
     profiles: ['prod']
-    image: lab-checkin:local
+    image: lab-trace:local
     build:
       context: .
     environment:
@@ -42,7 +42,7 @@ services:
     ports:
       - '3000:3000'
     volumes:
-      - lab-checkin-prod-data:/app/server/data
+      - lab-trace-prod-data:/app/server/data
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3000/api/health']
       interval: 30s
@@ -52,5 +52,5 @@ services:
     restart: unless-stopped
 
 volumes:
-  lab-checkin-test-data:
-  lab-checkin-prod-data:
+  lab-trace-test-data:
+  lab-trace-prod-data:

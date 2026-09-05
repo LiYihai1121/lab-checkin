@@ -1,6 +1,6 @@
 ---
-name: lab-checkin-backend
-description: lab-checkin 后端模块（server/）开发指南。Use when writing or reviewing backend code in this repository — Express routes, auth middleware, SQLite database changes, helpers, API design, or when backend lint/typecheck/Mimosa hook reports confusing errors. Covers node:sqlite quirks and hook false-positive workarounds.
+name: lab-trace-backend
+description: lab-trace 后端模块（server/）开发指南。Use when writing or reviewing backend code in this repository — Express routes, auth middleware, SQLite database changes, helpers, API design, or when backend lint/typecheck/Mimosa hook reports confusing errors. Covers node:sqlite quirks and hook false-positive workarounds.
 ---
 
 # 后端模块开发指南（server/）
@@ -49,4 +49,4 @@ Express 4 + Node 内置 `node:sqlite` 的 TypeScript API。路由按业务分文
 cd server && npm run typecheck && npm run lint && npm test
 ```
 
-新增/修改接口必须补集成测试（见 lab-checkin-testing skill）。
+新增/修改接口必须补集成测试（见 lab-trace-testing skill）。

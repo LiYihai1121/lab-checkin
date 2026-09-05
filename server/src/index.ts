@@ -62,7 +62,7 @@ app.use('/api/checkin/in', checkinLimiter);
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    service: 'lab-checkin',
+    service: 'lab-trace',
     environment: environment.name,
     environmentLabel: environment.label,
     version: appVersion,
@@ -99,7 +99,7 @@ const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
 app.use(errorHandler);
 
 const server = app.listen(PORT, () => {
-  console.info(`实验室签到系统后端已启动: http://localhost:${PORT}`);
+  console.info(`LabTrace 电子实验室签到系统后端已启动: http://localhost:${PORT}`);
   const corsDesc = Array.isArray(allowedOrigins) ? allowedOrigins.join(', ') : '任意来源（未设置 CORS_ORIGIN）';
   const dbDesc = process.env.DB_PATH || `server/data/${environment.dbFile}`;
   console.info(

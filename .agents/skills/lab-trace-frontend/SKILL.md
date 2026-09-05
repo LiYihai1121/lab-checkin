@@ -1,6 +1,6 @@
 ---
-name: lab-checkin-frontend
-description: lab-checkin 前端模块（web/）开发指南。Use when writing or reviewing frontend code in this repository — Vue 3 SFC components, Element Plus pages, router guards, Pinia stores, the axios request layer, Vite modes/builds, or frontend type errors from vue-tsc. Covers environment badges and the request-shell-stripping convention.
+name: lab-trace-frontend
+description: lab-trace 前端模块（web/）开发指南。Use when writing or reviewing frontend code in this repository — Vue 3 SFC components, Element Plus pages, router guards, Pinia stores, the axios request layer, Vite modes/builds, or frontend type errors from vue-tsc. Covers environment badges and the request-shell-stripping convention.
 ---
 
 # 前端模块开发指南（web/）
@@ -48,4 +48,4 @@ Vue 3.5 + Vite 6 + Element Plus + Pinia，全量 `<script setup lang="ts">`，st
 cd web && npm run typecheck && npm run lint && npm test && npm run build
 ```
 
-改了共享契约时连同后端一起验证（见 lab-checkin-testing skill）。
+改了共享契约时连同后端一起验证（见 lab-trace-testing skill）。
