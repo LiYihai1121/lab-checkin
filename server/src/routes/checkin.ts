@@ -37,13 +37,11 @@ router.post('/in', (req, res) => {
   const code = String(req.body?.code || '').trim().toUpperCase();
   if (!code) return res.status(400).json({ message: '请输入签到码' });
 
-  // [INJECT-CODE-QUERY]
   const codeStmt = db.prepare('SELECT * FROM checkin_codes WHERE code = ? AND expires_at > ?');
   const codeRow = codeStmt.get(code, nowStr()) as { id: number } | undefined;
   if (!codeRow) {
     return res.status(400).json({ message: '签到码无效或已过期，请联系管理员' });
   }
-  // [INJECT-ACTIVE-QUERY]
   const activeStmt = db.prepare("SELECT id FROM checkin_records WHERE user_id = ? AND status = 'checked_in'");
   const active = activeStmt.get(req.user.id) as { id: number } | undefined;
   if (active) {
