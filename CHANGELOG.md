@@ -2,6 +2,12 @@
 
 本文件遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 约定，版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [Unreleased]
+
+### Added
+
+- 镜像发布流水线 `release.yml`：push `v*` tag 或手动触发时构建镜像并推送 GHCR（`ghcr.io/liyihai1121/lab-checkin`，tag 号 + latest），CI 内完成容器冒烟验收（`/api/health` 的 environment/version 与 tag 一致性断言）
+
 ## [1.1.0] - 2026-09-06
 
 ### Added

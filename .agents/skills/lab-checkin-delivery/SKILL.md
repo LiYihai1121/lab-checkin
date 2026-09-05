@@ -44,6 +44,10 @@ cd web && npm run build:test   # 测试 → web/dist-test
 
 产物目录按环境分离，**测试构建不可用于生产**。构建是纯静态文件，由后端同源托管或 Nginx 托管。
 
+### 镜像发布（GHCR）
+
+镜像由 `.github/workflows/release.yml` 自动构建：push `v*` tag 或手动 dispatch（`gh workflow run release.yml -f tag=vX.Y.Z`）触发，发布到 `ghcr.io/liyihai1121/lab-checkin`（tag 号 + latest），构建后 CI 内做容器冒烟验收——`/api/health` 必须返回 `environment=production` 且 `version` 与 tag 一致。本机无 Docker 时走此通道；部署机直接 `docker compose --profile prod up -d`（会拉取 GHCR 镜像时需将 compose 的 build 改为 image 引用，或继续本地 build）。
+
 ## 4. 部署方式
 
 ### 方式一：Docker Compose（推荐，三环境编排见 docker-compose.yml）
