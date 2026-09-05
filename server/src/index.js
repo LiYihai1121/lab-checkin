@@ -75,6 +75,12 @@ app.use((err, req, res, next) => {
 
 const server = app.listen(PORT, () => {
   console.info(`实验室签到系统后端已启动: http://localhost:${PORT}`);
+  const corsDesc = Array.isArray(allowedOrigins)
+    ? allowedOrigins.join(', ')
+    : '任意来源（未设置 CORS_ORIGIN）';
+  console.info(
+    `[环境] NODE_ENV=${process.env.NODE_ENV || 'development'} | 数据库=${process.env.DB_PATH || 'server/data/lab-checkin.db'} | CORS=${corsDesc}`
+  );
 });
 
 // 端口被占用（如 --watch 重启时旧实例尚未退出）时给出明确原因而非裸堆栈

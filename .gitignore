@@ -12,6 +12,7 @@ server/data/*.db-wal
 # env & secrets
 .env
 .env.*
+!.env.example
 
 # tooling local state
 .mimosa/

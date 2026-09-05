@@ -5,11 +5,11 @@
   "type": "module",
   "main": "src/index.js",
   "engines": {
-    "node": ">=22.5.0"
+    "node": ">=22.9.0"
   },
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "node --watch src/index.js",
+    "start": "node --env-file-if-exists=.env src/index.js",
+    "dev": "node --watch --env-file-if-exists=.env src/index.js",
     "test": "vitest run",
     "version:check": "node ../scripts/check-version.mjs"
   },

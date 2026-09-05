@@ -32,7 +32,7 @@
 
 ## 快速开始
 
-要求：Node.js ≥ 22.5（使用内置 sqlite 模块）。
+要求：Node.js ≥ 22.9（使用内置 sqlite 模块；后端 `.env` 自动加载亦需要该版本）。
 
 ```bash
 # 终端 1：启动后端（端口 3000）
@@ -130,7 +130,25 @@ lab-checkin/
 - 密码找回码由管理员生成，12 位、15 分钟过期且使用后失效，不依赖邮箱或手机号
 - 角色权限中间件：学生无法访问管理接口；禁止删除自己、至少保留一名管理员
 
+## 环境安排（开发 / 测试 / 生产）
+
+| 环境 | 用途 | 数据库 | JWT_SECRET | 默认管理员 | 启动方式 |
+| --- | --- | --- | --- | --- | --- |
+| 开发 | 本地开发调试 | `server/data/lab-checkin.db`（自动创建） | 使用内置开发密钥 | 自动创建 `admin` / `admin123` | 终端分别执行 `cd server && npm run dev` 与 `cd web && npm run dev` |
+| 测试 | Vitest 自动化测试 | 自动注入 `:memory:` 内存库，永不触碰真实数据库 | 无需设置 | 由 `server/tests/setup.js` 注入 | `cd server && npm test`、`cd web && npm test` |
+| 生产 | 实际部署 | 经 `DB_PATH` 指定（默认同开发） | **必填**强随机密钥，缺失时拒绝启动 | 建好账号后设 `CREATE_DEFAULT_ADMIN=false` | 见下方「生产部署」 |
+
+后端启动脚本（`npm run dev` / `npm start`）会自动加载 `server/.env`。自定义配置时复制模板并按需取消注释：
+
+```bash
+cp server/.env.example server/.env
+```
+
+`.env` 已被 git 忽略，不会入库。前端开发服务器的 `/api` 代理目标默认 `http://localhost:3000`，需要指向其他后端时复制 [web/.env.example](web/.env.example) 为 `web/.env` 并设置 `VITE_API_PROXY_TARGET`。
+
 ## 环境变量
+
+后端变量可在 `server/.env`（由启动脚本自动加载，模板见 [server/.env.example](server/.env.example)）或启动环境中设置：
 
 | 变量 | 说明 |
 | --- | --- |
@@ -167,3 +185,5 @@ JWT_SECRET=你的随机密钥 PORT=3000 npm start
 ```bash
 JWT_SECRET=你的随机密钥 CORS_ORIGIN=https://lab.example.com npm start
 ```
+
+也可以把上述变量写入 `server/.env`（启动时自动加载，文件已被 git 忽略）；生产环境更推荐用系统环境变量或进程管理器注入密钥。
