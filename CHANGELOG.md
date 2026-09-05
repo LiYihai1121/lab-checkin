@@ -2,12 +2,22 @@
 
 本文件遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 约定，版本号遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
-## [Unreleased]
+## [1.1.0] - 2026-09-06
 
 ### Added
 
 - 工程化交付升级：ESLint/Prettier 双包质量门禁、Git 提交钩子（pre-commit 门禁与 Conventional Commits 校验）、三环境 Docker Compose 交付编排（test/prod profile、健康检查、独立数据卷）
 - CI 流水线升级：类型检查 + Lint + 测试 + 生产/测试双构建 + 版本一致性检查
+- VSCode 全栈开发环境配置：扩展推荐、三环境调试（后端/前端/浏览器/Vitest）与质量门禁任务
+- 模块化 skill 体系（后端/前端/测试/安全/交付）与业界选型参考文档
+
+### Changed
+
+- 新增 `.gitattributes`：仓库统一 LF，与 Prettier、.editorconfig 对齐
+
+### Removed
+
+- 删除三环境改造后失效的 `web/.env.example`（前端 mode 环境文件已入库）
 
 ## [1.0.0] - 2026-09-05
 

@@ -1,6 +1,6 @@
 {
   "name": "lab-checkin-server",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "实验室签到系统后端",
   "type": "module",
   "main": "src/index.ts",
