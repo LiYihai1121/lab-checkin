@@ -47,5 +47,8 @@
 
   // ===================== 包管理器 =====================
   "npm.packageManager": "npm",
-  "npm.excludeGlobPatterns": ["**/node_modules/**"]
+  "npm.excludeGlobPatterns": [
+    "**/node_modules/**"
+  ],
+  "terminal.integrated.enableVisualBell": true
 }
